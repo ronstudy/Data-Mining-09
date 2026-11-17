@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
 
 # ==============================================================================
 # HẰNG SỐ CẤU HÌNH DỰ ÁN
@@ -24,21 +27,21 @@ TEST_SIZE = 0.2
 CV_FOLDS = 5
 K_RANGE = range(2, 11)
 
-# Định nghĩa 2 nhóm đặc trưng hình thái
-# Nhóm kích thước: các độ đo hình học mang đơn vị độ dài hoặc diện tích (pixel)
+# Định nghĩa 2 nhóm đặc trưng hình thái theo PRD.md và ARCHITECTURE.md
+# Nhóm kích thước (8 đặc trưng): kích thước cơ bản và các độ đo trục chính/phụ
 SIZE_FEATURES = [
     "Area",
     "Perimeter",
     "MajorAxisLength",
     "MinorAxisLength",
+    "AspectRation",
+    "Eccentricity",
     "ConvexArea",
     "EquivDiameter",
 ]
 
-# Nhóm hình dạng: các chỉ số tỷ lệ, độ tròn, độ lồi không thứ nguyên
+# Nhóm hình dạng (8 đặc trưng): các hệ số hình thái, độ lồi, độ nén, độ tròn
 SHAPE_FEATURES = [
-    "AspectRation",
-    "Eccentricity",
     "Extent",
     "Solidity",
     "roundness",
@@ -683,6 +686,183 @@ def run_task_t6(
 
 
 # ==============================================================================
+# SPRINT 3: MÔ HÌNH HÓA (MODELING) - PHÂN LOẠI (RQ1) VÀ PHÂN CỤM (RQ2)
+# ==============================================================================
+def split_dataset(
+    df: pd.DataFrame,
+    test_size: float = TEST_SIZE,
+    random_state: int = RANDOM_STATE,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """Chia tập dữ liệu thành Train và Test theo tỷ lệ 80/20 có stratify.
+
+    Tuyệt đối không chuẩn hóa dữ liệu trước hoặc trong quá trình chia tập.
+
+    Tham số:
+        df: DataFrame đã làm sạch sau bước tiền xử lý.
+        test_size: Tỷ lệ mẫu dành cho tập kiểm tra (mặc định 0.2).
+        random_state: Hạt giống ngẫu nhiên để tái lập kết quả (42).
+
+    Trả về:
+        Tuple (X_train, X_test, y_train, y_test).
+    """
+    print("\n" + "=" * 70)
+    print("BƯỚC 6: PHÂN CHIA DỮ LIỆU HUẤN LUYỆN VÀ KIỂM TRA (TASK T7)")
+    print("=" * 70)
+
+    X = df[ALL_FEATURES]
+    y = df[CLASS_COLUMN]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    train_pct = (X_train.shape[0] / len(df)) * 100
+    test_pct = (X_test.shape[0] / len(df)) * 100
+
+    print(
+        f"- Phân chia dữ liệu theo tỷ lệ {int((1 - test_size) * 100)}/"
+        f"{int(test_size * 100)} (stratify=y, random_state={random_state}):"
+    )
+    print(
+        f"  + Tập huấn luyện (Train): {X_train.shape[0]} mẫu "
+        f"({train_pct:.2f}%), {X_train.shape[1]} đặc trưng."
+    )
+    print(
+        f"  + Tập kiểm tra   (Test) : {X_test.shape[0]} mẫu "
+        f"({test_pct:.2f}%), {X_test.shape[1]} đặc trưng."
+    )
+
+    # Kiểm tra tính toàn vẹn tỷ lệ phân bố 7 lớp trên 2 tập
+    print("\n- So sánh tỷ lệ phân bố 7 lớp giữa tập Train và Test:")
+    header = (
+        f"{'Lớp (Class)':<12} | {'Train (Số lượng)':>16} | {'Train (%)':>10} | "
+        f"{'Test (Số lượng)':>15} | {'Test (%)':>9}"
+    )
+    print("-" * len(header))
+    print(header)
+    print("-" * len(header))
+
+    train_counts = y_train.value_counts()
+    train_ratios = y_train.value_counts(normalize=True) * 100
+    test_counts = y_test.value_counts()
+    test_ratios = y_test.value_counts(normalize=True) * 100
+
+    for cls in CLASS_NAMES:
+        tr_cnt = train_counts.get(cls, 0)
+        tr_rat = train_ratios.get(cls, 0.0)
+        te_cnt = test_counts.get(cls, 0)
+        te_rat = test_ratios.get(cls, 0.0)
+        print(
+            f"{cls:<12} | {tr_cnt:>16} | {tr_rat:>9.2f}% | "
+            f"{te_cnt:>15} | {te_rat:>8.2f}%"
+        )
+    print("-" * len(header))
+    print(
+        "  -> Kết luận: Tỷ lệ phân bố 7 lớp được bảo toàn đồng nhất "
+        "giữa tập Train và Test."
+    )
+
+    return X_train, X_test, y_train, y_test
+
+
+def train_classification_models(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    random_state: int = RANDOM_STATE,
+) -> dict[str, dict[str, object]]:
+    """Huấn luyện 6 tổ hợp mô hình phân loại (2 thuật toán x 3 bộ đặc trưng).
+
+    Tuyệt đối không chuẩn hóa dữ liệu cho Naive Bayes và Decision Tree.
+
+    Tham số:
+        X_train: Đặc trưng tập huấn luyện.
+        y_train: Nhãn lớp tập huấn luyện.
+        random_state: Hạt giống ngẫu nhiên cho Decision Tree (42).
+
+    Trả về:
+        Dict chứa 6 mô hình đã huấn luyện kèm thông tin bộ đặc trưng.
+    """
+    print("\n" + "=" * 70)
+    print("BƯỚC 7: HUẤN LUYỆN 6 TỔ HỢP MÔ HÌNH PHÂN LOẠI (TASK T7)")
+    print("=" * 70)
+
+    # 3 bộ đặc trưng nghiên cứu
+    feature_sets = {
+        "Toàn bộ (16 đặc trưng)": ALL_FEATURES,
+        "Kích thước (8 đặc trưng)": SIZE_FEATURES,
+        "Hình dạng (8 đặc trưng)": SHAPE_FEATURES,
+    }
+
+    # 2 thuật toán theo yêu cầu PRD.md
+    algorithms = {
+        "GaussianNB": lambda: GaussianNB(),
+        "Decision Tree": lambda: DecisionTreeClassifier(
+            random_state=random_state
+        ),
+    }
+
+    trained_models = {}
+    comb_idx = 1
+    total_combs = len(algorithms) * len(feature_sets)
+
+    for algo_name, algo_fn in algorithms.items():
+        for set_name, feature_list in feature_sets.items():
+            model = algo_fn()
+            X_train_subset = X_train[feature_list]
+
+            print(
+                f"[{comb_idx}/{total_combs}] Đang huấn luyện {algo_name:<13} "
+                f"trên bộ '{set_name}' ({X_train_subset.shape[0]} mẫu, "
+                f"{len(feature_list)} đặc trưng)...",
+                end=" ",
+            )
+            model.fit(X_train_subset, y_train)
+            print("Hoàn thành!")
+
+            key = f"{algo_name} - {set_name}"
+            trained_models[key] = {
+                "model": model,
+                "algorithm": algo_name,
+                "feature_set_name": set_name,
+                "features": feature_list,
+            }
+            comb_idx += 1
+
+    print(
+        f"\n=> Đã huấn luyện thành công toàn bộ {total_combs} tổ hợp mô hình "
+        "trên tập Train (giữ nguyên tập Test cho Task T9)."
+    )
+
+    return trained_models
+
+
+def run_task_t7(
+    df: pd.DataFrame,
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.Series,
+    pd.Series,
+    dict[str, dict[str, object]],
+]:
+    """Thực thi Task T7: Phân chia 80/20 có stratify và huấn luyện 6 tổ hợp.
+
+    Tham số:
+        df: DataFrame đã làm sạch sau Bước 2.
+
+    Trả về:
+        Tuple (X_train, X_test, y_train, y_test, trained_models).
+    """
+    X_train, X_test, y_train, y_test = split_dataset(df)
+    trained_models = train_classification_models(X_train, y_train)
+    return X_train, X_test, y_train, y_test, trained_models
+
+
+# ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
 def main() -> None:
@@ -692,7 +872,7 @@ def main() -> None:
 
     print("\n" + "#" * 70)
     print("# DỰ ÁN KHAI PHÁ DỮ LIỆU: PHÂN LOẠI ĐẬU KHÔ (DRY BEAN DATASET)")
-    print("# TRIỂN KHAI SPRINT 1 & 2: TIỀN XỬ LÝ VÀ EDA (TASKS T1 - T6)")
+    print("# TRIỂN KHAI SPRINT 1, 2, 3: TIỀN XỬ LÝ, EDA VÀ MÔ HÌNH HÓA")
     print("#" * 70)
 
     # Tự động tạo thư mục chứa ảnh đầu ra theo quy chuẩn ARCHITECTURE.md
@@ -713,16 +893,13 @@ def main() -> None:
     # Task T6: Trực quan hóa đa biến (Heatmap tương quan và Boxplot theo lớp)
     high_corr_pairs = run_task_t6(df_clean, OUTPUT_DIR)
 
+    # Task T7: Phân chia tập dữ liệu 80/20 và huấn luyện 6 tổ hợp mô hình
+    X_train, X_test, y_train, y_test, trained_models = run_task_t7(df_clean)
+
     print("\n" + "=" * 70)
-    print("HOÀN THÀNH TOÀN BỘ SPRINT 1 & 2 THÀNH CÔNG!")
-    print(f"- Đã tính toán thống kê mô tả cho {len(stats_df)} đặc trưng.")
-    print(f"- Đã phát hiện {len(high_corr_pairs)} cặp đặc trưng tương quan |r| > 0.9.")
-    print("- Đã xuất đủ 5 biểu đồ EDA theo chuẩn DESIGN.md (DPI 300):")
-    print("  + 01_phan_bo_lop.png")
-    print("  + 02_histogram_kde.png")
-    print("  + 03_boxplot.png")
-    print("  + 04_heatmap_tuong_quan.png")
-    print("  + 05_boxplot_theo_lop.png")
+    print("HOÀN THÀNH TASK T7 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
+    print(f"- Đã phân chia tập dữ liệu: {len(X_train)} Train, {len(X_test)} Test.")
+    print(f"- Đã huấn luyện thành công {len(trained_models)} tổ hợp mô hình.")
     print("=" * 70 + "\n")
 
 
