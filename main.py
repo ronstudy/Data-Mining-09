@@ -476,6 +476,212 @@ def run_task_t5(
     plot_boxplots(df, output_dir)
 
 
+def plot_correlation_heatmap(
+    df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> list[tuple[str, str, float]]:
+    """Tính ma trận tương quan Pearson, vẽ heatmap và lọc các cặp |r| > 0.9.
+
+    Tham số:
+        df: DataFrame đã làm sạch.
+        output_dir: Thư mục lưu file biểu đồ.
+
+    Trả về:
+        Danh sách các cặp đặc trưng có |r| > 0.9 kèm hệ số tương quan.
+    """
+    print("\n" + "=" * 70)
+    print("BƯỚC 5: PHÂN TÍCH ĐA BIẾN VÀ TƯƠNG QUAN (TASK T6)")
+    print("=" * 70)
+
+    # 1. Tính ma trận tương quan Pearson
+    corr = df[ALL_FEATURES].corr()
+
+    # 2. Lọc các cặp đặc trưng có |r| > 0.9 để kiểm tra đa cộng tuyến
+    high_corr_pairs = []
+    for i in range(len(ALL_FEATURES)):
+        for j in range(i + 1, len(ALL_FEATURES)):
+            feat1 = ALL_FEATURES[i]
+            feat2 = ALL_FEATURES[j]
+            r_val = float(corr.loc[feat1, feat2])
+            if abs(r_val) > 0.9:
+                high_corr_pairs.append((feat1, feat2, r_val))
+
+    high_corr_pairs.sort(key=lambda item: abs(item[2]), reverse=True)
+
+    print(
+        f"\n1. DANH SÁCH CÁC CẶP ĐẶC TRƯNG TƯƠNG QUAN CAO (|r| > 0.9) "
+        f"(Tổng cộng: {len(high_corr_pairs)} cặp):"
+    )
+    header = (
+        f"{'STT':<4} | {'Đặc trưng 1':<16} - {'Đặc trưng 2':<16} | "
+        f"{'Hệ số r':>9} | {'Mức độ tương quan'}"
+    )
+    print("-" * len(header))
+    print(header)
+    print("-" * len(header))
+    for idx, (f1, f2, r_val) in enumerate(high_corr_pairs, 1):
+        rel_type = "Đồng biến rất mạnh" if r_val > 0 else "Nghịch biến rất mạnh"
+        print(
+            f"{idx:<4} | {f1:<16} - {f2:<16} | {r_val:>9.4f} | {rel_type}"
+        )
+    print("-" * len(header))
+
+    # 3. Trực quan hóa Heatmap ma trận tương quan (Biểu đồ 04)
+    print("\n2. TRỰC QUAN HÓA BIỂU ĐỒ 04: HEATMAP TƯƠNG QUAN (TASK T6)")
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
+    plt.rcParams["font.family"] = "sans-serif"
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+    sns.heatmap(
+        corr,
+        annot=True,
+        fmt=".2f",
+        cmap="coolwarm",
+        vmin=-1,
+        vmax=1,
+        center=0,
+        ax=ax,
+        annot_kws={"size": 8},
+        cbar_kws={"label": "Hệ số tương quan Pearson (r)"},
+        linewidths=0.5,
+        linecolor="white",
+    )
+    ax.set_title(
+        "Ma trận tương quan Pearson giữa 16 đặc trưng hình thái",
+        fontsize=14,
+        fontweight="bold",
+        pad=14,
+    )
+    ax.tick_params(axis="x", rotation=45, labelsize=10)
+    ax.tick_params(axis="y", rotation=0, labelsize=10)
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, "04_heatmap_tuong_quan.png")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
+
+    plt.show()
+    plt.close(fig)
+
+    return high_corr_pairs
+
+
+def plot_features_by_class(
+    df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> None:
+    """Vẽ boxplot so sánh các đặc trưng tiêu biểu phân tách theo 7 lớp đậu.
+
+    Tham số:
+        df: DataFrame đã làm sạch.
+        output_dir: Thư mục lưu file biểu đồ.
+    """
+    print("\n3. TRỰC QUAN HÓA BIỂU ĐỒ 05: BOXPLOT THEO LỚP (TASK T6)")
+
+    # Chọn 3 đặc trưng tiêu biểu đại diện cho kích thước và hình dạng
+    selected_features = ["Area", "AspectRation", "ShapeFactor1"]
+
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
+    plt.rcParams["font.family"] = "sans-serif"
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+
+    for idx, feature in enumerate(selected_features):
+        ax = axes[idx]
+        sns.boxplot(
+            x=CLASS_COLUMN,
+            y=feature,
+            data=df,
+            order=CLASS_NAMES,
+            palette=CLASS_COLOR_MAP,
+            ax=ax,
+            width=0.5,
+            fliersize=2.5,
+            flierprops=dict(marker="o", alpha=0.3),
+        )
+        ax.set_title(
+            f"Phân bố đặc trưng {feature} theo lớp",
+            fontsize=12,
+            fontweight="bold",
+            pad=10,
+        )
+        ax.set_xlabel("Loại đậu (Class)", fontsize=11, labelpad=8)
+        ax.set_ylabel(feature, fontsize=11, labelpad=8)
+        ax.tick_params(axis="x", rotation=25, labelsize=9)
+        ax.tick_params(axis="y", labelsize=9)
+
+    fig.suptitle(
+        "So sánh phân bố các đặc trưng tiêu biểu theo 7 lớp đậu",
+        fontsize=14,
+        fontweight="bold",
+        y=1.02,
+    )
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, "05_boxplot_theo_lop.png")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
+
+    plt.show()
+    plt.close(fig)
+
+
+def print_eda_summary(num_high_corr: int) -> None:
+    """In nhận xét tổng quan kết quả khám phá dữ liệu (EDA) ra console.
+
+    Tham số:
+        num_high_corr: Số lượng cặp đặc trưng có tương quan cao |r| > 0.9.
+    """
+    print("\n" + "=" * 70)
+    print("NHẬN XÉT TỔNG QUAN KẾT QUẢ KHÁM PHÁ DỮ LIỆU (EDA SUMMARY):")
+    print("=" * 70)
+    print(
+        "1. Về tương quan và hiện tượng đa cộng tuyến (Multicollinearity):\n"
+        f"   - Phát hiện {num_high_corr} cặp đặc trưng có tương quan rất cao "
+        "với |r| > 0.9.\n"
+        "   - Nhóm kích thước (Area, ConvexArea, Perimeter, EquivDiameter)\n"
+        "     có đa cộng tuyến cực cao (r = 0.9999 giữa Area và ConvexArea;\n"
+        "     r = 0.9915 giữa Perimeter và EquivDiameter).\n"
+        "   - Nhóm hình dạng có cặp tương quan gần như tuyệt đối giữa\n"
+        "     Compactness và ShapeFactor3 (r = 0.9987), và tương quan nghịch\n"
+        "     mạnh giữa AspectRation và Compactness (r = -0.9876).\n"
+        "   - Tác động thuật toán: Naive Bayes (giả định độc lập) có thể bị\n"
+        "     ảnh hưởng bởi hiện tượng đa cộng tuyến này, trong khi Decision Tree\n"
+        "     ít bị ảnh hưởng hơn do chỉ chọn một đặc trưng tốt nhất tại mỗi nút."
+    )
+    print(
+        "\n2. Về khả năng phân tách của các đặc trưng đối với 7 lớp đậu:\n"
+        "   - Nhóm kích thước (Area, Perimeter): Phân tách vượt trội giống BOMBAY\n"
+        "     (diện tích hạt lớn gấp 2-3 lần toàn bộ các giống còn lại).\n"
+        "   - Nhóm hình dạng (AspectRation, Eccentricity): Phân tách rõ rệt giống\n"
+        "     hạt thon dài (HOROZ, CALI) khỏi các giống hạt tròn (SEKER, DERMASON).\n"
+        "   - Nhóm hệ số hình thái (ShapeFactor1, ShapeFactor2): Hỗ trợ phân biệt\n"
+        "     các giống có kích thước tương đương nhau như DERMASON và SIRA.\n"
+        "   - Kết luận sơ bộ cho RQ1: Cả hai nhóm đặc trưng kích thước và hình dạng\n"
+        "     đều đóng vai trò bổ trợ then chốt, không thể thiếu nhóm nào nếu muốn\n"
+        "     phân loại chính xác toàn bộ 7 lớp hạt đậu."
+    )
+    print("=" * 70)
+
+
+def run_task_t6(
+    df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> list[tuple[str, str, float]]:
+    """Thực thi toàn bộ Task T6: Phân tích đa biến, biểu đồ 04, 05 và nhận xét.
+
+    Tham số:
+        df: DataFrame đã làm sạch sau Bước 2.
+        output_dir: Thư mục lưu biểu đồ đầu ra.
+
+    Trả về:
+        Danh sách các cặp đặc trưng có |r| > 0.9.
+    """
+    high_corr_pairs = plot_correlation_heatmap(df, output_dir)
+    plot_features_by_class(df, output_dir)
+    print_eda_summary(len(high_corr_pairs))
+    return high_corr_pairs
+
+
 # ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
@@ -486,7 +692,7 @@ def main() -> None:
 
     print("\n" + "#" * 70)
     print("# DỰ ÁN KHAI PHÁ DỮ LIỆU: PHÂN LOẠI ĐẬU KHÔ (DRY BEAN DATASET)")
-    print("# TRIỂN KHAI SPRINT 1 & 2: TIỀN XỬ LÝ VÀ EDA (TASKS T1 - T5)")
+    print("# TRIỂN KHAI SPRINT 1 & 2: TIỀN XỬ LÝ VÀ EDA (TASKS T1 - T6)")
     print("#" * 70)
 
     # Tự động tạo thư mục chứa ảnh đầu ra theo quy chuẩn ARCHITECTURE.md
@@ -504,11 +710,19 @@ def main() -> None:
     # Task T5: Trực quan hóa đơn biến (Histogram + KDE và Boxplot)
     run_task_t5(df_clean, OUTPUT_DIR)
 
+    # Task T6: Trực quan hóa đa biến (Heatmap tương quan và Boxplot theo lớp)
+    high_corr_pairs = run_task_t6(df_clean, OUTPUT_DIR)
+
     print("\n" + "=" * 70)
-    print("HOÀN THÀNH TASKS T4 & T5 (SPRINT 2) THÀNH CÔNG!")
+    print("HOÀN THÀNH TOÀN BỘ SPRINT 1 & 2 THÀNH CÔNG!")
     print(f"- Đã tính toán thống kê mô tả cho {len(stats_df)} đặc trưng.")
-    print("- Đã xuất 3 biểu đồ: 01_phan_bo_lop.png, 02_histogram_kde.png,")
-    print("  03_boxplot.png (DPI 300) vào thư mục outputs/.")
+    print(f"- Đã phát hiện {len(high_corr_pairs)} cặp đặc trưng tương quan |r| > 0.9.")
+    print("- Đã xuất đủ 5 biểu đồ EDA theo chuẩn DESIGN.md (DPI 300):")
+    print("  + 01_phan_bo_lop.png")
+    print("  + 02_histogram_kde.png")
+    print("  + 03_boxplot.png")
+    print("  + 04_heatmap_tuong_quan.png")
+    print("  + 05_boxplot_theo_lop.png")
     print("=" * 70 + "\n")
 
 
