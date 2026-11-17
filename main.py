@@ -13,7 +13,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import (
+    StratifiedKFold,
+    cross_validate,
+    train_test_split,
+)
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 
@@ -862,6 +866,160 @@ def run_task_t7(
     return X_train, X_test, y_train, y_test, trained_models
 
 
+def evaluate_cross_validation(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    cv_folds: int = CV_FOLDS,
+    random_state: int = RANDOM_STATE,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Đánh giá 5-fold Stratified CV trên tập Train cho 6 tổ hợp mô hình.
+
+    Tuyệt đối không sử dụng tập Test. Đánh giá và lựa chọn mô hình tối ưu
+    dựa trên F1-macro trung bình của 5-fold Stratified CV.
+
+    Tham số:
+        X_train: Đặc trưng tập huấn luyện.
+        y_train: Nhãn lớp tập huấn luyện.
+        cv_folds: Số fold kiểm định chéo (5).
+        random_state: Hạt giống ngẫu nhiên (42).
+
+    Trả về:
+        Tuple (cv_df, best_model_info).
+    """
+    print("\n" + "=" * 70)
+    print("BƯỚC 8: ĐÁNH GIÁ 5-FOLD STRATIFIED CV TRÊN TẬP TRAIN (TASK T8)")
+    print("=" * 70)
+
+    # Khởi tạo StratifiedKFold chuẩn theo quy định
+    skf = StratifiedKFold(
+        n_splits=cv_folds,
+        shuffle=True,
+        random_state=random_state,
+    )
+
+    feature_sets = {
+        "Toàn bộ (16 đặc trưng)": ALL_FEATURES,
+        "Kích thước (8 đặc trưng)": SIZE_FEATURES,
+        "Hình dạng (8 đặc trưng)": SHAPE_FEATURES,
+    }
+
+    algorithms = {
+        "GaussianNB": lambda: GaussianNB(),
+        "Decision Tree": lambda: DecisionTreeClassifier(
+            random_state=random_state
+        ),
+    }
+
+    cv_records = []
+    best_f1 = -1.0
+    best_model_info = {}
+
+    print(
+        f"- Thiết lập kiểm định chéo: {cv_folds}-fold Stratified CV "
+        f"(shuffle=True, random_state={random_state})."
+    )
+    print("- Đang thực hiện kiểm định chéo trên tập Train cho 6 tổ hợp:\n")
+
+    for algo_name, algo_fn in algorithms.items():
+        for set_name, feature_list in feature_sets.items():
+            model = algo_fn()
+            X_subset = X_train[feature_list]
+
+            cv_out = cross_validate(
+                model,
+                X_subset,
+                y_train,
+                cv=skf,
+                scoring=["accuracy", "f1_macro"],
+            )
+
+            acc_mean = float(cv_out["test_accuracy"].mean())
+            acc_std = float(cv_out["test_accuracy"].std())
+            f1_mean = float(cv_out["test_f1_macro"].mean())
+            f1_std = float(cv_out["test_f1_macro"].std())
+
+            record = {
+                "Thuật toán": algo_name,
+                "Bộ đặc trưng": set_name,
+                "F1-macro (Mean)": f1_mean,
+                "F1-macro (Std)": f1_std,
+                "Accuracy (Mean)": acc_mean,
+                "Accuracy (Std)": acc_std,
+                "features": feature_list,
+            }
+            cv_records.append(record)
+
+            # Lựa chọn mô hình tốt nhất theo F1-macro CV trung bình
+            if f1_mean > best_f1:
+                best_f1 = f1_mean
+                best_model_info = {
+                    "algorithm": algo_name,
+                    "feature_set_name": set_name,
+                    "features": feature_list,
+                    "f1_mean": f1_mean,
+                    "f1_std": f1_std,
+                    "acc_mean": acc_mean,
+                    "acc_std": acc_std,
+                }
+
+    cv_df = pd.DataFrame(cv_records)
+
+    # In bảng tổng hợp kết quả 5-fold CV với 4 chữ số thập phân
+    print("BẢNG KẾT QUẢ 5-FOLD STRATIFIED CROSS-VALIDATION (TẬP TRAIN):")
+    header = (
+        f"{'Thuật toán':<14} | {'Bộ đặc trưng':<24} | "
+        f"{'F1-macro CV (Mean ± Std)':>26} | {'Accuracy CV (Mean ± Std)':>26}"
+    )
+    print("-" * len(header))
+    print(header)
+    print("-" * len(header))
+
+    for _, row in cv_df.iterrows():
+        f1_str = f"{row['F1-macro (Mean)']:.4f} ± {row['F1-macro (Std)']:.4f}"
+        acc_str = f"{row['Accuracy (Mean)']:.4f} ± {row['Accuracy (Std)']:.4f}"
+        print(
+            f"{row['Thuật toán']:<14} | {row['Bộ đặc trưng']:<24} | "
+            f"{f1_str:>26} | {acc_str:>26}"
+        )
+    print("-" * len(header))
+
+    # In kết luận mô hình tối ưu nhất
+    print("\n" + "=" * 70)
+    print("KẾT LUẬN LỰA CHỌN MÔ HÌNH TỐI ƯU NHẤT (TASK T8):")
+    print("=" * 70)
+    print(
+        f"=> Mô hình tốt nhất: {best_model_info['algorithm']} "
+        f"trên bộ '{best_model_info['feature_set_name']}'\n"
+        f"   - F1-macro CV trung bình : {best_model_info['f1_mean']:.4f} "
+        f"± {best_model_info['f1_std']:.4f}\n"
+        f"   - Accuracy CV trung bình : {best_model_info['acc_mean']:.4f} "
+        f"± {best_model_info['acc_std']:.4f}\n"
+        "   - Căn cứ lựa chọn        : Đạt điểm F1-macro cao nhất trên 5 fold "
+        "huấn luyện,\n"
+        "                              đảm bảo năng lực tổng quát hóa cân bằng "
+        "giữa cả 7 lớp đậu."
+    )
+    print("=" * 70)
+
+    return cv_df, best_model_info
+
+
+def run_task_t8(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Thực thi Task T8: 5-fold Stratified CV và chọn mô hình tối ưu.
+
+    Tham số:
+        X_train: Đặc trưng tập huấn luyện.
+        y_train: Nhãn lớp tập huấn luyện.
+
+    Trả về:
+        Tuple (cv_df, best_model_info).
+    """
+    return evaluate_cross_validation(X_train, y_train)
+
+
 # ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
@@ -896,10 +1054,18 @@ def main() -> None:
     # Task T7: Phân chia tập dữ liệu 80/20 và huấn luyện 6 tổ hợp mô hình
     X_train, X_test, y_train, y_test, trained_models = run_task_t7(df_clean)
 
+    # Task T8: 5-fold Stratified CV trên tập Train và chọn mô hình tối ưu
+    cv_df, best_model_info = run_task_t8(X_train, y_train)
+
     print("\n" + "=" * 70)
-    print("HOÀN THÀNH TASK T7 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
+    print("HOÀN THÀNH TASKS T7 & T8 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
     print(f"- Đã phân chia tập dữ liệu: {len(X_train)} Train, {len(X_test)} Test.")
-    print(f"- Đã huấn luyện thành công {len(trained_models)} tổ hợp mô hình.")
+    print(f"- Đã huấn luyện và kiểm định 5-fold CV cho {len(trained_models)} tổ hợp.")
+    print(
+        f"- Mô hình tốt nhất được chọn: {best_model_info['algorithm']} "
+        f"({best_model_info['feature_set_name']}) "
+        f"với F1-macro = {best_model_info['f1_mean']:.4f}."
+    )
     print("=" * 70 + "\n")
 
 
