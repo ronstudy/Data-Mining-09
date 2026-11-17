@@ -3,8 +3,8 @@
 ## 1. Tổng quan
 | Hạng mục | Giá trị |
 |---|---|
-| Giai đoạn hiện tại | Hoàn tất lập tài liệu, chuẩn bị Sprint 1 |
-| Tiến độ | 0/16 task |
+| Giai đoạn hiện tại | Đang thực hiện Sprint 2 (EDA và thống kê) |
+| Tiến độ | 4/16 task |
 | Cập nhật lần cuối | 2026-11-17 |
 
 ## 2. Tình trạng tài liệu
@@ -22,10 +22,10 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 
 | Sprint | ID | Task (tóm tắt) | Trạng thái | Ngày xong | Ghi chú |
 |---|---|---|---|---|---|
-| 1 | T1 | Khung dự án, dữ liệu, thư viện | ⬜ | | |
-| 1 | T2 | `load_data` | ⬜ | | |
-| 1 | T3 | `preprocess` | ⬜ | | |
-| 2 | T4 | Thống kê mô tả, biểu đồ 01 | ⬜ | | |
+| 1 | T1 | Khung dự án, dữ liệu, thư viện | ✅ | 2026-11-17 | Khung main.py duy nhất, hằng số, điểm vào main, thư viện hợp lệ |
+| 1 | T2 | `load_data` | ✅ | 2026-11-17 | Nạp 13.611 mẫu, 17 cột, 7 lớp; kiểm tra file và cột, báo lỗi tiếng Việt |
+| 1 | T3 | `preprocess` | ✅ | 2026-11-17 | Bỏ 68 dòng trùng (còn 13.543 mẫu), 0 thiếu, 3.004 mẫu ngoại lai IQR (giữ nguyên), tách 2 nhóm đặc trưng |
+| 2 | T4 | Thống kê mô tả, biểu đồ 01 | ✅ | 2026-11-17 | Bảng thống kê mô tả 16 đặc trưng và xuất ảnh 01_phan_bo_lop.png (DPI 300) |
 | 2 | T5 | Biểu đồ đơn biến 02, 03 | ⬜ | | |
 | 2 | T6 | Biểu đồ đa biến 04, 05 | ⬜ | | |
 | 3 | T7 | Chia dữ liệu, huấn luyện 6 tổ hợp | ⬜ | | |
@@ -47,7 +47,7 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 ## 5. Kết quả chính (điền khi có số liệu thực)
 | Chỉ số | Giá trị |
 |---|---|
-| Số mẫu sau khi loại trùng | |
+| Số mẫu sau khi loại trùng | 13.543 |
 | Mô hình tốt nhất (F1-macro CV) | |
 | Accuracy / F1-macro trên tập kiểm tra | |
 | Nhóm đặc trưng quan trọng hơn | |
@@ -57,8 +57,9 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 ## 6. Nhật ký quyết định
 | Ngày | Quyết định |
 |---|---|
-| (trống) | |
+| 2026-11-17 | Giữ nguyên 3.004 mẫu chứa ngoại lai IQR (22,18%) vì là biến thiên sinh học tự nhiên giữa các giống đậu |
+| 2026-11-17 | Phân chia 16 đặc trưng thành 6 đặc trưng kích thước (đơn vị đo) và 10 đặc trưng hình dạng (tỷ lệ không thứ nguyên) |
 
 ## 7. Việc cần làm tiếp theo
-1. Bắt đầu **T1**: đặt `dry_beans.csv` vào thư mục gốc, tạo khung `main.py`.
-2. Sau mỗi task: chạy kiểm tra, cập nhật bảng này.
+1. Triển khai **Task T5**: Biểu đồ đơn biến 02 (Histogram + KDE lưới 4×4) và 03 (Boxplot lưới 4×4 cho 16 đặc trưng).
+2. Triển khai **Task T6**: Biểu đồ đa biến 04 (Heatmap tương quan) và 05 (Boxplot theo lớp), in nhận xét EDA.
