@@ -359,6 +359,123 @@ def run_task_t4(
     return stats_df
 
 
+def plot_histograms_kde(
+    df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> None:
+    """Vẽ lưới 4x4 biểu đồ Histogram kèm đường KDE cho 16 đặc trưng số.
+
+    Tham số:
+        df: DataFrame đã làm sạch.
+        output_dir: Thư mục lưu file biểu đồ.
+    """
+    print("\n1. TRỰC QUAN HÓA BIỂU ĐỒ 02: HISTOGRAM & KDE (TASK T5)")
+
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
+    plt.rcParams["font.family"] = "sans-serif"
+
+    fig, axes = plt.subplots(4, 4, figsize=(16, 12))
+    axes = axes.flatten()
+
+    for idx, feature in enumerate(ALL_FEATURES):
+        ax = axes[idx]
+        sns.histplot(
+            df[feature],
+            kde=True,
+            ax=ax,
+            color="#1f77b4",
+            edgecolor="white",
+            linewidth=0.5,
+            alpha=0.6,
+        )
+        ax.set_title(feature, fontsize=12, fontweight="bold")
+        ax.set_xlabel("Giá trị", fontsize=11)
+        ax.set_ylabel("Số lượng", fontsize=11)
+        ax.tick_params(axis="both", labelsize=10)
+
+    fig.suptitle(
+        "Phân bố đơn biến 16 đặc trưng hình thái (Histogram & KDE)",
+        fontsize=14,
+        fontweight="bold",
+    )
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, "02_histogram_kde.png")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
+
+    plt.show()
+    plt.close(fig)
+
+
+def plot_boxplots(
+    df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> None:
+    """Vẽ lưới 4x4 biểu đồ Boxplot cho 16 đặc trưng số để quan sát ngoại lai.
+
+    Tham số:
+        df: DataFrame đã làm sạch.
+        output_dir: Thư mục lưu file biểu đồ.
+    """
+    print("\n2. TRỰC QUAN HÓA BIỂU ĐỒ 03: BOXPLOT (TASK T5)")
+
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
+    plt.rcParams["font.family"] = "sans-serif"
+
+    fig, axes = plt.subplots(4, 4, figsize=(16, 12))
+    axes = axes.flatten()
+
+    for idx, feature in enumerate(ALL_FEATURES):
+        ax = axes[idx]
+        sns.boxplot(
+            y=df[feature],
+            ax=ax,
+            color="#2ca02c",
+            width=0.4,
+            fliersize=3,
+            flierprops=dict(
+                marker="o",
+                markerfacecolor="crimson",
+                markeredgecolor="none",
+                alpha=0.4,
+            ),
+        )
+        ax.set_title(feature, fontsize=12, fontweight="bold")
+        ax.set_ylabel("Giá trị", fontsize=11)
+        ax.tick_params(axis="both", labelsize=10)
+
+    fig.suptitle(
+        "Biểu đồ hộp (Boxplot) quan sát ngoại lai cho 16 đặc trưng hình thái",
+        fontsize=14,
+        fontweight="bold",
+    )
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, "03_boxplot.png")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
+
+    plt.show()
+    plt.close(fig)
+
+
+def run_task_t5(
+    df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> None:
+    """Thực thi toàn bộ Task T5: Trực quan hóa đơn biến (Biểu đồ 02 & 03).
+
+    Tham số:
+        df: DataFrame đã làm sạch sau Bước 2.
+        output_dir: Thư mục lưu biểu đồ đầu ra.
+    """
+    print("\n" + "=" * 70)
+    print("BƯỚC 4: TRỰC QUAN HÓA ĐƠN BIẾN (TASK T5)")
+    print("=" * 70)
+    plot_histograms_kde(df, output_dir)
+    plot_boxplots(df, output_dir)
+
+
 # ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
@@ -369,7 +486,7 @@ def main() -> None:
 
     print("\n" + "#" * 70)
     print("# DỰ ÁN KHAI PHÁ DỮ LIỆU: PHÂN LOẠI ĐẬU KHÔ (DRY BEAN DATASET)")
-    print("# TRIỂN KHAI SPRINT 1 & 2: TIỀN XỬ LÝ VÀ EDA (TASKS T1, T2, T3, T4)")
+    print("# TRIỂN KHAI SPRINT 1 & 2: TIỀN XỬ LÝ VÀ EDA (TASKS T1 - T5)")
     print("#" * 70)
 
     # Tự động tạo thư mục chứa ảnh đầu ra theo quy chuẩn ARCHITECTURE.md
@@ -384,10 +501,14 @@ def main() -> None:
     # Task T4: Thống kê mô tả và trực quan hóa phân bố lớp
     stats_df = run_task_t4(df_clean, OUTPUT_DIR)
 
+    # Task T5: Trực quan hóa đơn biến (Histogram + KDE và Boxplot)
+    run_task_t5(df_clean, OUTPUT_DIR)
+
     print("\n" + "=" * 70)
-    print("HOÀN THÀNH TASK T4 (SPRINT 2) THÀNH CÔNG!")
+    print("HOÀN THÀNH TASKS T4 & T5 (SPRINT 2) THÀNH CÔNG!")
     print(f"- Đã tính toán thống kê mô tả cho {len(stats_df)} đặc trưng.")
-    print("- Đã xuất biểu đồ: outputs/01_phan_bo_lop.png (DPI 300).")
+    print("- Đã xuất 3 biểu đồ: 01_phan_bo_lop.png, 02_histogram_kde.png,")
+    print("  03_boxplot.png (DPI 300) vào thư mục outputs/.")
     print("=" * 70 + "\n")
 
 
