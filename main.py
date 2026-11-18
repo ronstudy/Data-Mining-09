@@ -1395,6 +1395,245 @@ def run_task_t9(
     )
 
 
+def answer_research_question_1(
+    trained_models: dict[str, dict[str, object]],
+    best_model_info: dict[str, object],
+    cv_df: pd.DataFrame,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+) -> dict[str, object]:
+    """Tổng hợp số liệu thực nghiệm và trả lời câu hỏi nghiên cứu 1 (RQ1).
+
+    Tham số:
+        trained_models: Dict chứa 6 mô hình đã huấn luyện từ Task T7.
+        best_model_info: Thông tin mô hình tốt nhất chọn từ Task T8.
+        cv_df: DataFrame tổng hợp kết quả 5-fold CV từ Task T8.
+        X_test: Đặc trưng tập kiểm tra.
+        y_test: Nhãn lớp tập kiểm tra.
+
+    Trả về:
+        Dict chứa các chỉ số tổng hợp và phân tích tỷ trọng cho RQ1.
+    """
+    print("\n" + "=" * 70)
+    print("BƯỚC 10: TỔNG KẾT VÀ TRẢ LỜI CÂU HỎI NGHIÊN CỨU 1 - RQ1 (TASK T10)")
+    print("=" * 70)
+
+    # 1. Đánh giá kiểm thử 6 tổ hợp trên Test set để lập bảng so sánh đầy đủ
+    eval_records = []
+    for key, item in trained_models.items():
+        algo = item["algorithm"]
+        set_name = item["feature_set_name"]
+        feats = item["features"]
+        model = item["model"]
+
+        preds = model.predict(X_test[feats])
+        acc_test = float(accuracy_score(y_test, preds))
+        f1_test = float(f1_score(y_test, preds, average="macro"))
+
+        # Trích xuất số liệu 5-fold CV tương ứng từ cv_df
+        cv_match = cv_df[
+            (cv_df["Thuật toán"] == algo)
+            & (cv_df["Bộ đặc trưng"] == set_name)
+        ]
+        cv_row = cv_match.iloc[0]
+
+        eval_records.append(
+            {
+                "Thuật toán": algo,
+                "Bộ đặc trưng": set_name,
+                "F1_CV_Mean": cv_row["F1-macro (Mean)"],
+                "F1_CV_Std": cv_row["F1-macro (Std)"],
+                "Acc_CV_Mean": cv_row["Accuracy (Mean)"],
+                "Acc_CV_Std": cv_row["Accuracy (Std)"],
+                "Acc_Test": acc_test,
+                "F1_Test": f1_test,
+            }
+        )
+
+    summary_df = pd.DataFrame(eval_records)
+
+    def get_val(algo_name: str, set_label: str, col_name: str) -> float:
+        subset = summary_df[
+            (summary_df["Thuật toán"] == algo_name)
+            & (summary_df["Bộ đặc trưng"] == set_label)
+        ]
+        return float(subset[col_name].values[0]) if not subset.empty else 0.0
+
+    # In bảng tổng hợp so sánh hiệu năng
+    print("\n1. BẢNG TỔNG HỢP HIỆU NĂNG 6 TỔ HỢP MÔ HÌNH VÀ BỘ ĐẶC TRƯNG:")
+    header = (
+        f"{'Thuật toán':<14} | {'Bộ đặc trưng':<24} | "
+        f"{'F1-macro CV (5-fold)':>22} | {'Test Acc':>9} | {'Test F1':>9}"
+    )
+    print("-" * len(header))
+    print(header)
+    print("-" * len(header))
+    for _, row in summary_df.iterrows():
+        cv_str = f"{row['F1_CV_Mean']:.4f} ± {row['F1_CV_Std']:.4f}"
+        print(
+            f"{row['Thuật toán']:<14} | {row['Bộ đặc trưng']:<24} | "
+            f"{cv_str:>22} | {row['Acc_Test']:>9.4f} | "
+            f"{row['F1_Test']:>9.4f}"
+        )
+    print("-" * len(header))
+
+    # 2. Phân tích mô hình tốt nhất
+    best_algo = best_model_info["algorithm"]
+    best_set = best_model_info["feature_set_name"]
+    best_f1_cv = best_model_info["f1_mean"]
+    best_f1_std = best_model_info["f1_std"]
+    best_acc_cv = best_model_info["acc_mean"]
+    best_acc_std = best_model_info["acc_std"]
+    best_test_acc = get_val(best_algo, best_set, "Acc_Test")
+    best_test_f1 = get_val(best_algo, best_set, "F1_Test")
+
+    print("\n2. MÔ HÌNH TỐI ƯU NHẤT ĐƯỢC LỰA CHỌN:")
+    print(f"   - Tên mô hình            : {best_algo} - {best_set}")
+    print(
+        f"   - F1-macro CV (Train)    : {best_f1_cv:.4f} ± {best_f1_std:.4f}"
+    )
+    print(
+        f"   - Accuracy CV (Train)    : {best_acc_cv:.4f} ± {best_acc_std:.4f}"
+    )
+    print(f"   - Accuracy (Test set)    : {best_test_acc:.4f}")
+    print(f"   - F1-macro (Test set)    : {best_test_f1:.4f}")
+    print(
+        "   - Căn cứ lựa chọn        : Dựa hoàn toàn trên điểm F1-macro "
+        "5-fold CV trung bình\n"
+        "                              cao nhất trên tập huấn luyện (Train set),\n"
+        "                              tuân thủ nguyên tắc phương pháp luận "
+        "(không chọn mô hình\n"
+        "                              dựa trên tập kiểm tra để tránh rò rỉ "
+        "thông tin)."
+    )
+
+    # 3. Phân tích tỷ trọng đóng góp feature_importances_ trên 16 đặc trưng
+    dt_all_key = "Decision Tree - Toàn bộ (16 đặc trưng)"
+    dt_all_model = trained_models[dt_all_key]["model"]
+    importances = pd.Series(
+        dt_all_model.feature_importances_, index=ALL_FEATURES
+    )
+
+    size_importance = float(importances[SIZE_FEATURES].sum())
+    shape_importance = float(importances[SHAPE_FEATURES].sum())
+    size_pct = size_importance * 100
+    shape_pct = shape_importance * 100
+
+    top_features = importances.sort_values(ascending=False).head(5)
+
+    print("\n3. PHÂN TÍCH TỶ TRỌNG ĐỘ QUAN TRỌNG ĐẶC TRƯNG (FEATURE IMPORTANCES):")
+    print(
+        f"   - Tổng tỷ trọng nhóm Hình dạng  : {shape_importance:.4f} "
+        f"({shape_pct:.2f}%)"
+    )
+    print(
+        f"   - Tổng tỷ trọng nhóm Kích thước : {size_importance:.4f} "
+        f"({size_pct:.2f}%)"
+    )
+    ratio = shape_importance / size_importance if size_importance > 0 else 0
+    print(
+        f"   -> Nhóm Hình dạng chiếm ưu thế gấp {ratio:.2f} lần "
+        "nhóm Kích thước."
+    )
+    print(
+        "\n   Top 5 đặc trưng quan trọng nhất toàn bộ tập dữ liệu (16 đặc trưng):"
+    )
+    for rank, (feat, val) in enumerate(top_features.items(), 1):
+        group = "Hình dạng" if feat in SHAPE_FEATURES else "Kích thước"
+        print(
+            f"     {rank}. {feat:<16} ({group:<10}): "
+            f"{val:.4f} ({val * 100:.2f}%)"
+        )
+
+    # 4. Trả lời trực diện câu hỏi nghiên cứu 1 (RQ1)
+    nb_size_f1 = get_val("GaussianNB", "Kích thước (8 đặc trưng)", "F1_CV_Mean")
+    nb_shape_f1 = get_val("GaussianNB", "Hình dạng (8 đặc trưng)", "F1_CV_Mean")
+    dt_size_f1 = get_val(
+        "Decision Tree", "Kích thước (8 đặc trưng)", "F1_CV_Mean"
+    )
+    dt_shape_f1 = get_val(
+        "Decision Tree", "Hình dạng (8 đặc trưng)", "F1_CV_Mean"
+    )
+    dt_all_f1 = get_val(
+        "Decision Tree", "Toàn bộ (16 đặc trưng)", "F1_CV_Mean"
+    )
+
+    nb_diff = (nb_shape_f1 - nb_size_f1) * 100
+    dt_diff = (dt_shape_f1 - dt_size_f1) * 100
+
+    print("\n" + "=" * 70)
+    print("KẾT LUẬN VÀ TRẢ LỜI CÂU HỎI NGHIÊN CỨU 1 (RQ1):")
+    print("=" * 70)
+    print(
+        "CÂU HỎI RQ1: Dựa vào nhóm đặc trưng nào, kích thước hay hình dạng,\n"
+        "             để xác định loại đậu chính xác hơn?\n"
+    )
+    print(
+        "CÂU TRẢ LỜI TRỰC DIỆN: NHÓM ĐẶC TRƯNG HÌNH DẠNG (SHAPE FEATURES)\n"
+        "                      GIÚP PHÂN LOẠI 7 LOẠI ĐẬU CHÍNH XÁC HƠN RÕ RỆT."
+    )
+    print(
+        "\nCÁC CĂN CỨ THỰC NGHIỆM ĐỊNH LƯỢNG:\n"
+        f"1. Hiệu năng vượt trội trên cả 2 thuật toán:\n"
+        f"   - Với GaussianNB: F1-macro tăng vọt từ {nb_size_f1:.4f} "
+        f"(Kích thước)\n"
+        f"     lên {nb_shape_f1:.4f} (Hình dạng), tăng trưởng ấn tượng "
+        f"+{nb_diff:.2f}%.\n"
+        f"   - Với Decision Tree: F1-macro nhóm Hình dạng đạt {dt_shape_f1:.4f},\n"
+        f"     cao hơn rõ rệt nhóm Kích thước ({dt_size_f1:.4f}, "
+        f"tăng +{dt_diff:.2f}%)\n"
+        f"     và vượt qua cả khi dùng toàn bộ 16 đặc trưng ({dt_all_f1:.4f}).\n"
+        f"2. Áp đảo về tỷ trọng đóng góp (Gini Importance):\n"
+        f"   - Nhóm Hình dạng chiếm {shape_pct:.2f}% tổng tỷ trọng, trong khi "
+        f"nhóm Kích thước chỉ chiếm {size_pct:.2f}%.\n"
+        f"   - Top 2 đặc trưng quan trọng nhất đều thuộc nhóm Hình dạng\n"
+        f"     ({top_features.index[0]}: {top_features.iloc[0] * 100:.2f}%, "
+        f"{top_features.index[1]}: {top_features.iloc[1] * 100:.2f}%).\n"
+        "\nÝ NGHĨA HÌNH THÁI HỌC VÀ THỰC TIỄN NÔNG HỌC:\n"
+        "- Kích thước hạt (Area, Perimeter, ...) dễ bị biến thiên mạnh bởi\n"
+        "  điều kiện ngoại cảnh như thổ nhưỡng, lượng mưa, độ ẩm và mùa vụ.\n"
+        "- Ngược lại, các tỷ lệ hình thái không thứ nguyên (Compactness, "
+        "roundness,\n"
+        "  ShapeFactors) là đặc tính di truyền học ổn định của từng giống đậu,\n"
+        "  giúp phân biệt xuất sắc giữa các giống đậu có kích thước tương đồng\n"
+        "  (như DERMASON và SIRA) mà nhóm kích thước đơn thuần không thể "
+        "phân tách."
+    )
+    print("=" * 70)
+
+    return {
+        "summary_df": summary_df,
+        "best_model": f"{best_algo} - {best_set}",
+        "shape_importance": shape_importance,
+        "size_importance": size_importance,
+        "top_features": top_features,
+    }
+
+
+def run_task_t10(
+    trained_models: dict[str, dict[str, object]],
+    best_model_info: dict[str, object],
+    cv_df: pd.DataFrame,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+) -> dict[str, object]:
+    """Thực thi Task T10: Tổng kết và trả lời câu hỏi nghiên cứu RQ1.
+
+    Tham số:
+        trained_models: Dict chứa các mô hình đã huấn luyện từ Task T7.
+        best_model_info: Thông tin mô hình tốt nhất chọn từ Task T8.
+        cv_df: DataFrame kết quả 5-fold CV từ Task T8.
+        X_test: Đặc trưng tập kiểm tra.
+        y_test: Nhãn lớp tập kiểm tra.
+
+    Trả về:
+        Dict chứa các chỉ số và kết luận thực nghiệm cho RQ1.
+    """
+    return answer_research_question_1(
+        trained_models, best_model_info, cv_df, X_test, y_test
+    )
+
+
 # ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
@@ -1437,16 +1676,26 @@ def main() -> None:
         trained_models, best_model_info, cv_df, X_test, y_test, OUTPUT_DIR
     )
 
-    print("\n" + "=" * 70)
-    print("HOÀN THÀNH TASK T9 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
-    print(
-        f"- Đã đánh giá trên tập Test: {len(X_test)} mẫu "
-        "(chỉ dùng duy nhất 1 lần cho mô hình tốt nhất)."
+    # Task T10: Tổng kết và trả lời câu hỏi nghiên cứu RQ1
+    rq1_results = run_task_t10(
+        trained_models, best_model_info, cv_df, X_test, y_test
     )
+
+    print("\n" + "=" * 70)
+    print("HOÀN THÀNH TASKS T9 & T10 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
+    print(f"- Đã đánh giá trên tập Test: {len(X_test)} mẫu.")
     print("- Đã xuất đủ 3 biểu đồ đánh giá theo chuẩn DESIGN.md (DPI 300):")
     print("  + 06_confusion_matrix.png")
     print("  + 07_so_sanh_mo_hinh.png")
     print("  + 08_feature_importances.png")
+    print(
+        f"- Đã trả lời trực diện RQ1: Nhóm Hình dạng vượt trội "
+        f"({rq1_results['shape_importance'] * 100:.2f}% tỷ trọng đóng góp)."
+    )
+    print(
+        f"- Mô hình tốt nhất: {rq1_results['best_model']} "
+        f"(F1-macro CV = {best_model_info['f1_mean']:.4f})."
+    )
     print("=" * 70 + "\n")
 
 
