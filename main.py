@@ -9,15 +9,20 @@ import os
 import sys
 import warnings
 
+# Khắc phục cảnh báo joblib Loky đếm số core trên Windows
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.cluster import KMeans
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
     confusion_matrix,
     f1_score,
+    silhouette_score,
 )
 from sklearn.model_selection import (
     StratifiedKFold,
@@ -25,6 +30,7 @@ from sklearn.model_selection import (
     train_test_split,
 )
 from sklearn.naive_bayes import GaussianNB
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
 # ==============================================================================
@@ -1635,6 +1641,204 @@ def run_task_t10(
 
 
 # ==============================================================================
+# SPRINT 3 - TASK T11: PHÂN CỤM K-MEANS, ELBOW VÀ SILHOUETTE
+# ==============================================================================
+def run_kmeans_clustering_experiments(
+    df_clean: pd.DataFrame,
+    k_range: range = K_RANGE,
+    random_state: int = RANDOM_STATE,
+) -> tuple[pd.DataFrame, np.ndarray, StandardScaler]:
+    """Chạy phân cụm K-Means với K từ 2 đến 10 trên dữ liệu đã chuẩn hóa.
+
+    Theo ARCHITECTURE.md và RULES.md:
+    - Sử dụng toàn bộ 13.543 mẫu sạch với 16 đặc trưng số.
+    - Áp dụng StandardScaler (không rò rỉ nhãn Class).
+    - Tính WCSS (Inertia) và Hệ số Silhouette cho từng K.
+
+    Tham số:
+        df_clean: DataFrame đã tiền xử lý sạch.
+        k_range: Dải giá trị K (mặc định 2..10).
+        random_state: Hạt giống ngẫu nhiên (mặc định 42).
+
+    Trả về:
+        Tuple gồm (DataFrame kết quả K-Means, ma trận X_scaled, đối tượng scaler).
+    """
+    print("\n" + "=" * 70)
+    print("TASK T11: PHÂN CỤM K-MEANS, PHƯƠNG PHÁP ELBOW VÀ HỆ SỐ SILHOUETTE")
+    print("=" * 70)
+
+    # 1. Trích xuất 16 đặc trưng số và chuẩn hóa bằng StandardScaler
+    X_all = df_clean[ALL_FEATURES].copy()
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_all)
+
+    print(f"- Số mẫu đưa vào phân cụm: {X_scaled.shape[0]:,} mẫu.")
+    print(f"- Số đặc trưng chuẩn hóa (StandardScaler): {X_scaled.shape[1]} đặc trưng.")
+    print("- Lưu ý: Cột nhãn 'Class' hoàn toàn không được đưa vào huấn luyện K-Means.")
+    print("\nĐang tiến hành chạy K-Means và tính hệ số Silhouette (K = 2..10)...")
+
+    results: list[dict[str, object]] = []
+
+    for k in k_range:
+        kmeans = KMeans(n_clusters=k, random_state=random_state, n_init=10)
+        cluster_labels = kmeans.fit_predict(X_scaled)
+        inertia = kmeans.inertia_
+        sil = silhouette_score(X_scaled, cluster_labels)
+        results.append(
+            {
+                "k": k,
+                "inertia": inertia,
+                "silhouette": sil,
+            }
+        )
+
+    kmeans_df = pd.DataFrame(results)
+
+    # 2. In bảng kết quả định dạng 4 chữ số thập phân
+    print("\n" + "-" * 55)
+    print(f"{'K':<6}{'Inertia (WCSS)':<22}{'Silhouette Score':<20}")
+    print("-" * 55)
+    for _, row in kmeans_df.iterrows():
+        k_val = int(row["k"])
+        inertia_val = float(row["inertia"])
+        sil_val = float(row["silhouette"])
+        print(f"{k_val:<6}{inertia_val:<22.4f}{sil_val:<20.4f}")
+    print("-" * 55)
+
+    # 3. Phân tích K tối ưu và mốc K=7 thực tế
+    best_sil_row = kmeans_df.loc[kmeans_df["silhouette"].idxmax()]
+    best_k = int(best_sil_row["k"])
+    best_sil = float(best_sil_row["silhouette"])
+    best_inertia = float(best_sil_row["inertia"])
+
+    k7_row = kmeans_df.loc[kmeans_df["k"] == 7].iloc[0]
+    k7_sil = float(k7_row["silhouette"])
+    k7_inertia = float(k7_row["inertia"])
+
+    print("\n[ĐÁNH GIÁ CHỌN K TỐI ƯU]:")
+    print(
+        f"1. Theo Hệ số Silhouette: K = {best_k} đạt giá trị cao nhất "
+        f"({best_sil:.4f}, Inertia = {best_inertia:,.4f})."
+    )
+    print(
+        f"2. Tại K = 7 (số lượng lớp thực tế): Silhouette = {k7_sil:.4f}, "
+        f"Inertia = {k7_inertia:,.4f}."
+    )
+    print(
+        f"3. Nhận xét phương pháp Elbow: Tốc độ suy giảm Inertia bắt đầu "
+        f"phẳng dần từ K = 3 đến K = 5,\n   cho thấy dữ liệu tự nhiên tụ thành "
+        f"3 cụm hình thái lớn (đậu lớn, đậu dài và nhóm đậu tròn nhỏ)."
+    )
+
+    return kmeans_df, X_scaled, scaler
+
+
+def plot_elbow_silhouette(
+    kmeans_df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> None:
+    """Vẽ và lưu biểu đồ 09_elbow_silhouette.png theo chuẩn DESIGN.md.
+
+    Tham số:
+        kmeans_df: DataFrame chứa các chỉ số K, inertia, silhouette.
+        output_dir: Thư mục lưu file ảnh.
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Subplot 1: Phương pháp Elbow (Inertia)
+    ax1.plot(
+        kmeans_df["k"],
+        kmeans_df["inertia"],
+        marker="o",
+        color="#1f77b4",
+        linewidth=2,
+        markersize=6,
+        label="Inertia (WCSS)",
+    )
+    ax1.axvline(
+        x=7,
+        color="crimson",
+        linestyle="--",
+        linewidth=1.5,
+        label="K = 7 (Số lớp thực tế)",
+    )
+    ax1.set_title(
+        "Phương pháp Elbow (Đường cong Inertia theo K)",
+        fontsize=12,
+        fontweight="bold",
+        pad=10,
+    )
+    ax1.set_xlabel("Số lượng cụm (K)", fontsize=11)
+    ax1.set_ylabel("Inertia (Tổng bình phương khoảng cách)", fontsize=11)
+    ax1.set_xticks(kmeans_df["k"])
+    ax1.grid(True, linestyle="--", alpha=0.6)
+    ax1.legend(loc="upper right", fontsize=10)
+
+    # Subplot 2: Hệ số Silhouette
+    best_sil_row = kmeans_df.loc[kmeans_df["silhouette"].idxmax()]
+    best_k = int(best_sil_row["k"])
+    best_sil = float(best_sil_row["silhouette"])
+
+    ax2.plot(
+        kmeans_df["k"],
+        kmeans_df["silhouette"],
+        marker="s",
+        color="#2ca02c",
+        linewidth=2,
+        markersize=6,
+        label="Silhouette Score",
+    )
+    ax2.scatter(
+        [best_k],
+        [best_sil],
+        color="darkorange",
+        s=120,
+        zorder=5,
+        label=f"K = {best_k} tối ưu (Sil = {best_sil:.4f})",
+    )
+    ax2.axvline(
+        x=7,
+        color="crimson",
+        linestyle="--",
+        linewidth=1.5,
+        label="K = 7 (Số lớp thực tế)",
+    )
+    ax2.set_title(
+        "Hệ số Silhouette theo số lượng cụm K",
+        fontsize=12,
+        fontweight="bold",
+        pad=10,
+    )
+    ax2.set_xlabel("Số lượng cụm (K)", fontsize=11)
+    ax2.set_ylabel("Hệ số Silhouette trung bình", fontsize=11)
+    ax2.set_xticks(kmeans_df["k"])
+    ax2.grid(True, linestyle="--", alpha=0.6)
+    ax2.legend(loc="upper right", fontsize=10)
+
+    plt.tight_layout()
+    output_path = os.path.join(output_dir, "09_elbow_silhouette.png")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"\n- Đã lưu biểu đồ: {output_path} (DPI 300, bbox_inches='tight')")
+
+
+def run_task_t11(
+    df_clean: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> tuple[pd.DataFrame, np.ndarray, StandardScaler]:
+    """Thực thi toàn diện Task T11: Phân cụm K-Means, Elbow & Silhouette.
+
+    Tham số:
+        df_clean: DataFrame dữ liệu đã được tiền xử lý sạch.
+        output_dir: Thư mục lưu ảnh đầu ra.
+
+    Trả về:
+        Tuple gồm (kmeans_df, X_scaled, scaler).
+    """
+    kmeans_df, X_scaled, scaler = run_kmeans_clustering_experiments(df_clean)
+    plot_elbow_silhouette(kmeans_df, output_dir)
+    return kmeans_df, X_scaled, scaler
+
+
+# ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
 def main() -> None:
@@ -1681,13 +1885,23 @@ def main() -> None:
         trained_models, best_model_info, cv_df, X_test, y_test
     )
 
+    # Task T11: Phân cụm K-Means, tính Elbow & Silhouette và vẽ biểu đồ 09
+    kmeans_df, X_scaled, scaler = run_task_t11(df_clean, OUTPUT_DIR)
+
+    best_k = int(kmeans_df.loc[kmeans_df["silhouette"].idxmax(), "k"])
+    best_sil = float(
+        kmeans_df.loc[kmeans_df["silhouette"].idxmax(), "silhouette"]
+    )
+    k7_sil = float(kmeans_df.loc[kmeans_df["k"] == 7, "silhouette"].iloc[0])
+
     print("\n" + "=" * 70)
-    print("HOÀN THÀNH TASKS T9 & T10 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
+    print("HOÀN THÀNH TASKS T9, T10 & T11 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
     print(f"- Đã đánh giá trên tập Test: {len(X_test)} mẫu.")
-    print("- Đã xuất đủ 3 biểu đồ đánh giá theo chuẩn DESIGN.md (DPI 300):")
+    print("- Đã xuất đủ các biểu đồ theo chuẩn DESIGN.md (DPI 300):")
     print("  + 06_confusion_matrix.png")
     print("  + 07_so_sanh_mo_hinh.png")
     print("  + 08_feature_importances.png")
+    print("  + 09_elbow_silhouette.png")
     print(
         f"- Đã trả lời trực diện RQ1: Nhóm Hình dạng vượt trội "
         f"({rq1_results['shape_importance'] * 100:.2f}% tỷ trọng đóng góp)."
@@ -1695,6 +1909,10 @@ def main() -> None:
     print(
         f"- Mô hình tốt nhất: {rq1_results['best_model']} "
         f"(F1-macro CV = {best_model_info['f1_mean']:.4f})."
+    )
+    print(
+        f"- Phân cụm K-Means (T11): K tối ưu = {best_k} (Sil = {best_sil:.4f}), "
+        f"tại K=7 (Sil = {k7_sil:.4f})."
     )
     print("=" * 70 + "\n")
 
