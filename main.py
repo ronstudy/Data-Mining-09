@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.patches import Patch
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -1028,31 +1027,18 @@ def run_task_t8(
 
 
 def plot_confusion_matrix(
-    y_true: pd.Series,
-    y_pred: np.ndarray,
-    model_title: str,
+    cm: np.ndarray,
+    class_names: list[str],
     output_dir: str = OUTPUT_DIR,
-) -> np.ndarray:
-    """Vẽ ma trận nhầm lẫn chuẩn hóa theo hàng (Recall) kèm số lượng mẫu.
+) -> None:
+    """Vẽ heatmap ma trận nhầm lẫn trên tập Test bằng số lượng mẫu đếm thô.
 
     Tham số:
-        y_true: Nhãn thực tế trên tập kiểm tra.
-        y_pred: Nhãn dự đoán từ mô hình tốt nhất.
-        model_title: Tên mô hình để đặt tiêu đề biểu đồ.
+        cm: Ma trận nhầm lẫn dạng 2D numpy array.
+        class_names: Danh sách tên 7 lớp đậu.
         output_dir: Thư mục lưu file biểu đồ.
-
-    Trả về:
-        np.ndarray chứa ma trận nhầm lẫn đếm thô.
     """
     print("\n2. TRỰC QUAN HÓA BIỂU ĐỒ 06: CONFUSION MATRIX (TASK T9)")
-
-    cm = confusion_matrix(y_true, y_pred, labels=CLASS_NAMES)
-    cm_norm = cm.astype(float) / cm.sum(axis=1)[:, np.newaxis]
-
-    annot_matrix = np.empty_like(cm, dtype=object)
-    for i in range(len(CLASS_NAMES)):
-        for j in range(len(CLASS_NAMES)):
-            annot_matrix[i, j] = f"{cm_norm[i, j]:.2f}\n({cm[i, j]})"
 
     plt.style.use("seaborn-v0_8-whitegrid")
     plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
@@ -1060,29 +1046,27 @@ def plot_confusion_matrix(
 
     fig, ax = plt.subplots(figsize=(9, 7))
     sns.heatmap(
-        cm_norm,
-        annot=annot_matrix,
-        fmt="",
+        cm,
+        annot=True,
+        fmt="d",
         cmap="Blues",
-        vmin=0.0,
-        vmax=1.0,
-        xticklabels=CLASS_NAMES,
-        yticklabels=CLASS_NAMES,
+        xticklabels=class_names,
+        yticklabels=class_names,
         ax=ax,
-        cbar_kws={"label": "Tỷ lệ chuẩn hóa theo hàng (Recall)"},
         linewidths=0.5,
         linecolor="white",
+        cbar_kws={"label": "Số lượng mẫu"},
     )
 
     ax.set_title(
-        f"Ma trận nhầm lẫn (Confusion Matrix)\n"
-        f"Mô hình tốt nhất: {model_title}",
+        "Ma trận nhầm lẫn trên tập kiểm tra\n"
+        "(Mô hình: Decision Tree - Nhóm Hình dạng)",
         fontsize=13,
         fontweight="bold",
         pad=12,
     )
-    ax.set_xlabel("Nhãn dự đoán (Predicted Class)", fontsize=11, labelpad=8)
-    ax.set_ylabel("Nhãn thực tế (True Class)", fontsize=11, labelpad=8)
+    ax.set_xlabel("Nhãn dự đoán", fontsize=11, labelpad=8)
+    ax.set_ylabel("Nhãn thực tế", fontsize=11, labelpad=8)
     ax.tick_params(axis="x", rotation=25, labelsize=10)
     ax.tick_params(axis="y", rotation=0, labelsize=10)
     plt.tight_layout()
@@ -1090,21 +1074,17 @@ def plot_confusion_matrix(
     output_path = os.path.join(output_dir, "06_confusion_matrix.png")
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
-
-    plt.show()
     plt.close(fig)
-
-    return cm
 
 
 def plot_model_comparison(
-    test_results_df: pd.DataFrame,
+    cv_df: pd.DataFrame,
     output_dir: str = OUTPUT_DIR,
 ) -> None:
-    """Vẽ biểu đồ cột nhóm so sánh Accuracy và F1-macro giữa các tổ hợp.
+    """Vẽ biểu đồ cột nhóm so sánh F1-Macro 5-fold CV giữa 2 nhóm đặc trưng.
 
     Tham số:
-        test_results_df: DataFrame chứa kết quả đánh giá trên tập kiểm tra.
+        cv_df: DataFrame tổng hợp kết quả 5-fold CV từ Task T8.
         output_dir: Thư mục lưu file biểu đồ.
     """
     print("\n3. TRỰC QUAN HÓA BIỂU ĐỒ 07: SO SÁNH HIỆU NĂNG MÔ HÌNH (TASK T9)")
@@ -1113,284 +1093,305 @@ def plot_model_comparison(
     plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
     plt.rcParams["font.family"] = "sans-serif"
 
-    fig, ax = plt.subplots(figsize=(13, 6))
+    # Chỉ so sánh trên 2 nhóm đặc trưng nghiên cứu chính theo RQ1
+    target_sets = ["Kích thước (8 đặc trưng)", "Hình dạng (8 đặc trưng)"]
+    sub_df = cv_df[cv_df["Bộ đặc trưng"].isin(target_sets)]
+    algorithms = list(cv_df["Thuật toán"].unique())
 
-    labels = [
-        f"{row['Thuật toán']}\n({row['Bộ đặc trưng']})"
-        for _, row in test_results_df.iterrows()
-    ]
-    x = np.arange(len(labels))
-    width = 0.35
+    fig, ax = plt.subplots(figsize=(11, 6))
 
-    rects1 = ax.bar(
-        x - width / 2,
-        test_results_df["Accuracy"],
-        width,
-        label="Accuracy",
-        color="#2b5c8f",
-        edgecolor="black",
-        linewidth=0.6,
-    )
-    rects2 = ax.bar(
-        x + width / 2,
-        test_results_df["F1-macro"],
-        width,
-        label="F1-macro",
-        color="#e26d5c",
-        edgecolor="black",
-        linewidth=0.6,
-    )
+    x = np.arange(len(target_sets))
+    bar_width = 0.32 if len(algorithms) <= 2 else 0.8 / len(algorithms)
+    palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
 
-    ax.bar_label(rects1, fmt="%.4f", padding=3, fontsize=9, fontweight="bold")
-    ax.bar_label(rects2, fmt="%.4f", padding=3, fontsize=9, fontweight="bold")
+    for i, algo in enumerate(algorithms):
+        algo_df = sub_df[sub_df["Thuật toán"] == algo]
+        f1_values = []
+        for ts in target_sets:
+            match = algo_df[algo_df["Bộ đặc trưng"] == ts]
+            val = (
+                match["F1-macro (Mean)"].values[0] if not match.empty else 0.0
+            )
+            f1_values.append(val)
+
+        offset = (i - (len(algorithms) - 1) / 2) * bar_width
+        rects = ax.bar(
+            x + offset,
+            f1_values,
+            bar_width,
+            label=algo,
+            color=palette[i % len(palette)],
+            edgecolor="black",
+            linewidth=0.7,
+            alpha=0.9,
+        )
+        ax.bar_label(
+            rects, fmt="%.4f", padding=4, fontsize=10, fontweight="bold"
+        )
 
     ax.set_title(
-        "So sánh hiệu năng Accuracy và F1-macro giữa 6 tổ hợp "
-        "trên tập kiểm tra (20%)",
-        fontsize=13,
+        "So sánh F1-Macro (CV 5-fold) giữa các mô hình "
+        "theo 2 nhóm đặc trưng",
+        fontsize=14,
         fontweight="bold",
         pad=14,
     )
-    ax.set_xlabel("Tổ hợp mô hình và bộ đặc trưng", fontsize=11, labelpad=8)
-    ax.set_ylabel("Điểm số đánh giá", fontsize=11, labelpad=8)
+    ax.set_xlabel("Nhóm đặc trưng hình thái", fontsize=11, labelpad=8)
+    ax.set_ylabel(
+        "Điểm F1-Macro trung bình (5-fold CV)", fontsize=11, labelpad=8
+    )
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
-    ax.tick_params(axis="y", labelsize=10)
-    ax.set_ylim(0, 1.08)
-    ax.legend(loc="lower right", fontsize=10)
+    ax.set_xticklabels(
+        ["Nhóm Kích thước (8 đặc trưng)", "Nhóm Hình dạng (8 đặc trưng)"],
+        fontsize=10,
+        fontweight="bold",
+    )
+    ax.set_ylim(0.0, 1.05)
+    ax.tick_params(axis="both", labelsize=10)
+    ax.legend(title="Thuật toán", fontsize=10, title_fontsize=11)
     plt.tight_layout()
 
     output_path = os.path.join(output_dir, "07_so_sanh_mo_hinh.png")
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
-
-    plt.show()
     plt.close(fig)
 
 
 def plot_feature_importances(
-    dt_model: object,
+    dt_model: DecisionTreeClassifier,
+    feature_names: list[str],
     output_dir: str = OUTPUT_DIR,
 ) -> pd.Series:
-    """Vẽ biểu đồ cột ngang độ quan trọng đặc trưng từ mô hình Decision Tree.
+    """Vẽ biểu đồ cột ngang thể hiện feature_importances_ của Decision Tree.
 
     Tham số:
-        dt_model: Mô hình Decision Tree huấn luyện trên 16 đặc trưng.
+        dt_model: Mô hình Decision Tree tốt nhất (nhóm Hình dạng).
+        feature_names: Danh sách 8 đặc trưng hình dạng.
         output_dir: Thư mục lưu file biểu đồ.
 
     Trả về:
-        pd.Series chứa độ quan trọng của 16 đặc trưng được sắp xếp giảm dần.
+        pd.Series chứa mức độ quan trọng sắp xếp giảm dần.
     """
     print("\n4. TRỰC QUAN HÓA BIỂU ĐỒ 08: FEATURE IMPORTANCES (TASK T9)")
-
-    importances = pd.Series(
-        dt_model.feature_importances_,
-        index=ALL_FEATURES,
-    ).sort_values(ascending=True)
-
-    # Gán màu: Xanh lam cho kích thước, Xanh lá cho hình dạng
-    colors = [
-        "#1f77b4" if feat in SIZE_FEATURES else "#2ca02c"
-        for feat in importances.index
-    ]
 
     plt.style.use("seaborn-v0_8-whitegrid")
     plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
     plt.rcParams["font.family"] = "sans-serif"
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    # Sắp xếp tăng dần để khi vẽ barh, giá trị lớn nhất nằm trên cùng
+    importances_asc = pd.Series(
+        dt_model.feature_importances_,
+        index=feature_names,
+    ).sort_values(ascending=True)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
     bars = ax.barh(
-        importances.index,
-        importances.values,
-        color=colors,
+        importances_asc.index,
+        importances_asc.values,
+        color="#2ca02c",
         edgecolor="black",
-        linewidth=0.6,
-        height=0.65,
+        linewidth=0.7,
+        height=0.6,
+        alpha=0.9,
     )
 
-    ax.bar_label(bars, fmt="%.4f", padding=3, fontsize=9, fontweight="bold")
+    ax.bar_label(bars, fmt="%.4f", padding=5, fontsize=10, fontweight="bold")
 
     ax.set_title(
-        "Độ quan trọng của 16 đặc trưng hình thái "
-        "(Decision Tree - Toàn bộ đặc trưng)",
+        "Mức độ quan trọng của các đặc trưng "
+        "(Decision Tree - Nhóm Hình dạng)",
         fontsize=13,
         fontweight="bold",
-        pad=12,
+        pad=14,
     )
-    ax.set_xlabel("Độ quan trọng (Gini Importance)", fontsize=11, labelpad=8)
-    ax.set_ylabel("Đặc trưng hình thái", fontsize=11, labelpad=8)
+    ax.set_xlabel(
+        "Mức độ quan trọng (Gini Importance)", fontsize=11, labelpad=8
+    )
+    ax.set_ylabel("Đặc trưng hình dạng", fontsize=11, labelpad=8)
     ax.tick_params(axis="both", labelsize=10)
-
-    # Mở rộng giới hạn trục hoành để nhãn số không chạm mép
-    ax.set_xlim(0, max(importances.values) * 1.15)
-
-    legend_elements = [
-        Patch(
-            facecolor="#1f77b4",
-            edgecolor="black",
-            label="Nhóm kích thước (8 đặc trưng)",
-        ),
-        Patch(
-            facecolor="#2ca02c",
-            edgecolor="black",
-            label="Nhóm hình dạng (8 đặc trưng)",
-        ),
-    ]
-    ax.legend(handles=legend_elements, loc="lower right", fontsize=10)
+    ax.set_xlim(0, max(importances_asc.values) * 1.15)
     plt.tight_layout()
 
     output_path = os.path.join(output_dir, "08_feature_importances.png")
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
-
-    plt.show()
     plt.close(fig)
 
-    return importances.sort_values(ascending=False)
+    return importances_asc.sort_values(ascending=False)
 
 
 def evaluate_test_set(
     trained_models: dict[str, dict[str, object]],
     best_model_info: dict[str, object],
+    cv_df: pd.DataFrame,
     X_test: pd.DataFrame,
     y_test: pd.Series,
     output_dir: str = OUTPUT_DIR,
-) -> tuple[pd.DataFrame, pd.Series]:
-    """Đánh giá toàn diện trên tập kiểm tra (Test set - 20%) và xuất 3 biểu đồ.
+) -> tuple[np.ndarray, np.ndarray, dict[str, object], pd.Series]:
+    """Đánh giá mô hình tốt nhất duy nhất một lần trên tập Test và vẽ 3 biểu đồ.
 
     Tham số:
-        trained_models: Dict chứa 6 mô hình đã huấn luyện từ Task T7.
+        trained_models: Dict chứa các mô hình đã huấn luyện từ Task T7.
         best_model_info: Thông tin mô hình tốt nhất chọn từ Task T8.
-        X_test: Đặc trưng tập kiểm tra (2.709 mẫu).
-        y_test: Nhãn lớp tập kiểm tra.
+        cv_df: DataFrame kết quả 5-fold CV từ Task T8 (dùng cho Biểu đồ 07).
+        X_test: Đặc trưng tập kiểm tra (chỉ dùng duy nhất cho mô hình tốt nhất).
+        y_test: Nhãn thực tế tập kiểm tra.
         output_dir: Thư mục lưu biểu đồ.
 
     Trả về:
-        Tuple (test_results_df, feature_importances_series).
+        Tuple (y_pred, cm, report_dict, importances).
     """
     print("\n" + "=" * 70)
     print("BƯỚC 9: ĐÁNH GIÁ TRÊN TẬP KIỂM TRA - TEST SET 20% (TASK T9)")
     print("=" * 70)
 
-    # 1. Đánh giá mô hình tốt nhất
-    best_key = (
-        f"{best_model_info['algorithm']} - "
-        f"{best_model_info['feature_set_name']}"
-    )
+    # 1. Trích xuất mô hình tốt nhất từ T8 (Decision Tree - Nhóm Hình dạng)
+    best_algo = best_model_info["algorithm"]
+    best_set_name = best_model_info["feature_set_name"]
+    best_key = f"{best_algo} - {best_set_name}"
     best_model = trained_models[best_key]["model"]
-    best_feats = best_model_info["features"]
+    best_features = best_model_info["features"]
 
-    y_pred_best = best_model.predict(X_test[best_feats])
-    acc_best = accuracy_score(y_test, y_pred_best)
-    f1_best = f1_score(y_test, y_pred_best, average="macro")
+    # Chỉ dự đoán duy nhất 1 lần trên tập Test của nhóm Hình dạng (RULES.md)
+    X_test_hinh_dang = X_test[best_features]
+    y_pred = best_model.predict(X_test_hinh_dang)
 
-    print(f"\n1. ĐÁNH GIÁ MÔ HÌNH TỐI ƯU NHẤT: {best_key}")
-    print(f"   - Accuracy trên Test set : {acc_best:.4f}")
-    print(f"   - F1-macro trên Test set : {f1_best:.4f}")
+    acc_test = accuracy_score(y_test, y_pred)
+    f1_test = f1_score(y_test, y_pred, average="macro")
 
-    print("\nBáo cáo phân loại chi tiết (Classification Report):")
-    print(classification_report(y_test, y_pred_best, digits=4))
+    print(f"\n1. KẾT QUẢ ĐÁNH GIÁ MÔ HÌNH TỐI ƯU NHẤT TRÊN TẬP TEST:")
+    print(f"   - Mô hình được đánh giá  : {best_key}")
+    print(
+        f"   - Kích thước tập kiểm tra: {len(X_test_hinh_dang)} mẫu, "
+        f"{len(best_features)} đặc trưng hình dạng."
+    )
+    print(f"   - Accuracy trên Test set : {acc_test:.4f}")
+    print(f"   - F1-macro trên Test set : {f1_test:.4f}")
 
-    # 2. Phân tích các cặp lớp dễ nhầm lẫn nhất
-    cm = confusion_matrix(y_test, y_pred_best, labels=CLASS_NAMES)
-    confused_pairs = []
-    for i in range(len(CLASS_NAMES)):
-        for j in range(len(CLASS_NAMES)):
-            if i != j and cm[i, j] > 0:
-                confused_pairs.append(
-                    (CLASS_NAMES[i], CLASS_NAMES[j], cm[i, j])
-                )
+    # 2. In classification_report tiếng Việt rõ ràng
+    report_dict = classification_report(
+        y_test,
+        y_pred,
+        target_names=CLASS_NAMES,
+        digits=4,
+        output_dict=True,
+    )
 
-    confused_pairs.sort(key=lambda item: item[2], reverse=True)
-
-    print("CÁC CẶP LỚP DỄ BỊ NHẦM LẪN NHẤT TRÊN TẬP KIỂM TRA:")
+    print("\nBẢNG BÁO CÁO PHÂN LOẠI CHI TIẾT (CLASSIFICATION REPORT):")
     header = (
-        f"{'Thực tế':<12} -> {'Dự đoán nhầm':<14} | "
-        f"{'Số mẫu':>8} | {'Tỷ lệ lỗi trên lớp thật'}"
+        f"{'Lớp (Class)':<14} | {'Precision':>11} | {'Recall':>11} | "
+        f"{'F1-Score':>11} | {'Số mẫu (Support)':>16}"
     )
     print("-" * len(header))
     print(header)
     print("-" * len(header))
-    for true_c, pred_c, cnt in confused_pairs[:6]:
-        idx = CLASS_NAMES.index(true_c)
-        class_total = cm[idx].sum()
-        pct = (cnt / class_total) * 100
+    for cls in CLASS_NAMES:
+        m = report_dict[cls]
         print(
-            f"{true_c:<12} -> {pred_c:<14} | {cnt:>8} | {pct:>22.2f}%"
+            f"{cls:<14} | "
+            f"{m['precision']:>11.4f} | "
+            f"{m['recall']:>11.4f} | "
+            f"{m['f1-score']:>11.4f} | "
+            f"{int(m['support']):>16}"
         )
     print("-" * len(header))
     print(
-        "Nhận xét: Giống DERMASON và SIRA là cặp nhầm lẫn lớn nhất do đặc điểm\n"
-        "hình thái hạt nhỏ tương đồng. Giống BARBUNYA và CALI cũng có nhầm lẫn\n"
-        "nhẹ do đều có dạng hạt bầu dục đốm. Riêng BOMBAY đạt độ chính xác 100%."
+        f"{'Accuracy':<14} | {'':>11} | {'':>11} | "
+        f"{report_dict['accuracy']:>11.4f} | "
+        f"{len(y_test):>16}"
+    )
+    print(
+        f"{'Macro Avg':<14} | "
+        f"{report_dict['macro avg']['precision']:>11.4f} | "
+        f"{report_dict['macro avg']['recall']:>11.4f} | "
+        f"{report_dict['macro avg']['f1-score']:>11.4f} | "
+        f"{len(y_test):>16}"
+    )
+    print(
+        f"{'Weighted Avg':<14} | "
+        f"{report_dict['weighted avg']['precision']:>11.4f} | "
+        f"{report_dict['weighted avg']['recall']:>11.4f} | "
+        f"{report_dict['weighted avg']['f1-score']:>11.4f} | "
+        f"{len(y_test):>16}"
+    )
+    print("-" * len(header))
+
+    # 3. Phân tích ma trận nhầm lẫn và tìm cặp nhầm lẫn nhiều nhất
+    cm = confusion_matrix(y_test, y_pred, labels=CLASS_NAMES)
+
+    # Tự động tìm cặp lớp bị nhầm lẫn nhiều nhất (bỏ qua đường chéo chính)
+    pair_confusion = {}
+    max_single_err = -1
+    single_confused_pair = ("", "", 0)
+
+    for i in range(len(CLASS_NAMES)):
+        for j in range(len(CLASS_NAMES)):
+            if i == j:
+                continue
+            err = int(cm[i, j])
+            if err > max_single_err:
+                max_single_err = err
+                single_confused_pair = (CLASS_NAMES[i], CLASS_NAMES[j], err)
+
+            pair_key = tuple(sorted([CLASS_NAMES[i], CLASS_NAMES[j]]))
+            pair_confusion[pair_key] = pair_confusion.get(pair_key, 0) + err
+
+    most_confused_pair, total_err = max(
+        pair_confusion.items(), key=lambda item: item[1]
     )
 
-    # 3. Đánh giá toàn bộ 6 tổ hợp trên Test set phục vụ Biểu đồ 07
-    test_records = []
-    feature_sets = {
-        "Toàn bộ": ALL_FEATURES,
-        "Kích thước": SIZE_FEATURES,
-        "Hình dạng": SHAPE_FEATURES,
-    }
-    algorithms = ["GaussianNB", "Decision Tree"]
+    idx_a = CLASS_NAMES.index(most_confused_pair[0])
+    idx_b = CLASS_NAMES.index(most_confused_pair[1])
+    err_a_to_b = cm[idx_a, idx_b]
+    err_b_to_a = cm[idx_b, idx_a]
 
-    for algo in algorithms:
-        for s_name, f_list in feature_sets.items():
-            for key, val in trained_models.items():
-                if (
-                    val["algorithm"] == algo
-                    and s_name in val["feature_set_name"]
-                ):
-                    pred = val["model"].predict(X_test[f_list])
-                    test_records.append(
-                        {
-                            "Thuật toán": algo,
-                            "Bộ đặc trưng": s_name,
-                            "Accuracy": accuracy_score(y_test, pred),
-                            "F1-macro": f1_score(
-                                y_test, pred, average="macro"
-                            ),
-                        }
-                    )
-                    break
+    print("\nPHÂN TÍCH NHẦM LẪN GIỮA CÁC LỚP ĐẬU (CONFUSION ANALYSIS):")
+    print(
+        f"=> Cặp lớp đậu bị nhầm lẫn nhiều nhất: "
+        f"'{most_confused_pair[0]}' và '{most_confused_pair[1]}'\n"
+        f"   - Tổng số mẫu nhầm lẫn 2 chiều : {total_err} mẫu\n"
+        f"   - Chi tiết: {most_confused_pair[0]} nhầm thành "
+        f"{most_confused_pair[1]}: {err_a_to_b} mẫu\n"
+        f"               {most_confused_pair[1]} nhầm thành "
+        f"{most_confused_pair[0]}: {err_b_to_a} mẫu\n"
+        f"   - Chiều nhầm lẫn đơn lẻ lớn nhất: "
+        f"{single_confused_pair[0]} -> {single_confused_pair[1]} "
+        f"({single_confused_pair[2]} mẫu nhầm)"
+    )
 
-    test_results_df = pd.DataFrame(test_records)
+    # 4. Vẽ và lưu 3 biểu đồ theo quy định Task T9
+    plot_confusion_matrix(cm, CLASS_NAMES, output_dir)
+    plot_model_comparison(cv_df, output_dir)
+    importances = plot_feature_importances(
+        best_model, best_features, output_dir
+    )
 
-    # 4. Trực quan hóa Biểu đồ 06: Confusion Matrix
-    plot_confusion_matrix(y_test, y_pred_best, best_key, output_dir)
-
-    # 5. Trực quan hóa Biểu đồ 07: So sánh mô hình
-    plot_model_comparison(test_results_df, output_dir)
-
-    # 6. Trực quan hóa Biểu đồ 08: Feature Importances
-    dt_all_key = "Decision Tree - Toàn bộ (16 đặc trưng)"
-    dt_all_model = trained_models[dt_all_key]["model"]
-    importances = plot_feature_importances(dt_all_model, output_dir)
-
-    return test_results_df, importances
+    return y_pred, cm, report_dict, importances
 
 
 def run_task_t9(
     trained_models: dict[str, dict[str, object]],
     best_model_info: dict[str, object],
+    cv_df: pd.DataFrame,
     X_test: pd.DataFrame,
     y_test: pd.Series,
     output_dir: str = OUTPUT_DIR,
-) -> tuple[pd.DataFrame, pd.Series]:
+) -> tuple[np.ndarray, np.ndarray, dict[str, object], pd.Series]:
     """Thực thi Task T9: Đánh giá Test set và xuất 3 biểu đồ 06, 07, 08.
 
     Tham số:
-        trained_models: Dict chứa 6 mô hình đã huấn luyện.
-        best_model_info: Thông tin mô hình tốt nhất.
+        trained_models: Dict chứa các mô hình đã huấn luyện từ Task T7.
+        best_model_info: Thông tin mô hình tốt nhất chọn từ Task T8.
+        cv_df: DataFrame kết quả 5-fold CV từ Task T8.
         X_test: Đặc trưng tập kiểm tra.
         y_test: Nhãn lớp tập kiểm tra.
         output_dir: Thư mục lưu ảnh.
 
     Trả về:
-        Tuple (test_results_df, importances).
+        Tuple (y_pred, cm, report_dict, importances).
     """
     return evaluate_test_set(
-        trained_models, best_model_info, X_test, y_test, output_dir
+        trained_models, best_model_info, cv_df, X_test, y_test, output_dir
     )
 
 
@@ -1432,13 +1433,16 @@ def main() -> None:
     cv_df, best_model_info = run_task_t8(X_train, y_train)
 
     # Task T9: Đánh giá trên tập kiểm tra và trực quan hóa biểu đồ 06, 07, 08
-    test_results_df, importances = run_task_t9(
-        trained_models, best_model_info, X_test, y_test, OUTPUT_DIR
+    y_pred, cm_test, report_dict, importances = run_task_t9(
+        trained_models, best_model_info, cv_df, X_test, y_test, OUTPUT_DIR
     )
 
     print("\n" + "=" * 70)
     print("HOÀN THÀNH TASK T9 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
-    print(f"- Đã đánh giá trên tập Test: {len(X_test)} mẫu.")
+    print(
+        f"- Đã đánh giá trên tập Test: {len(X_test)} mẫu "
+        "(chỉ dùng duy nhất 1 lần cho mô hình tốt nhất)."
+    )
     print("- Đã xuất đủ 3 biểu đồ đánh giá theo chuẩn DESIGN.md (DPI 300):")
     print("  + 06_confusion_matrix.png")
     print("  + 07_so_sanh_mo_hinh.png")
