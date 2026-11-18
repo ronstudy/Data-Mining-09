@@ -4,7 +4,7 @@
 | Hạng mục | Giá trị |
 |---|---|
 | Giai đoạn hiện tại | Đang thực hiện Sprint 4 (Nghiệm thu) |
-| Tiến độ | 14/16 task |
+| Tiến độ | 15/16 task |
 | Cập nhật lần cuối | 2026-11-19 |
 
 ## 2. Tình trạng tài liệu
@@ -36,7 +36,7 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 3 | T12 | Crosstab, ARI, biểu đồ 10-12 | ✅ | 2026-11-19 | KMeans K=7, ARI = 0.6669, PCA 2D giải thích 81.91% phương sai; xuất ảnh 10 (crosstab), 11 (PCA cụm), 12 (PCA nhãn thật) |
 | 3 | T13 | Kết luận RQ2 | ✅ | 2026-11-19 | K tối ưu K=3 (Silhouette=0.4044), tại K=7 đạt ARI=0.6669; K-Means tách sạch Bombay (100%), Horoz, Seker, Dermason; gom chung Cali/Barbunya |
 | 4 | T14 | Chạy hai lần, kiểm tra tái lập | ✅ | 2026-11-19 | Chạy 2 lần liên tiếp độc lập (exit code 0); 961 dòng output console trùng khớp 100% từng số liệu |
-| 4 | T15 | Rà PEP8, RULES, biểu đồ | ⬜ | | |
+| 4 | T15 | Rà PEP8, RULES, biểu đồ | ✅ | 2026-11-19 | Đạt chuẩn 100% PEP8 (<= 88 ký tự/dòng), 35/35 hàm có docstring; nghiệm thu đủ 12/12 biểu đồ đạt 300 DPI |
 | 4 | T16 | Đối chiếu PRD, chuẩn bị báo cáo | ⬜ | | |
 
 ## 4. Bug Tracker
@@ -76,7 +76,7 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 2026-11-19 | Hoàn thành T12: Chạy KMeans K=7, lập crosstab, tính ARI = 0.6669, phân tích PCA 2D (81.91% phương sai), xuất 10_crosstab_cum_lop.png, 11_pca_cum.png, 12_pca_lop_that.png |
 | 2026-11-19 | Hoàn thành T13: Trả lời câu hỏi RQ2, kết luận K tối ưu K=3 (Sil=0.4044) và độ khớp với 7 loại đậu thực tế ARI = 0.6669 (Sprint 3 hoàn tất 100%) |
 | 2026-11-19 | Hoàn thành T14: Kiểm tra tính tái lập (reproducibility) thành công, chạy 2 lần liên tiếp khớp 100% số liệu (961 dòng output giống hệt nhau) |
+| 2026-11-19 | Hoàn thành T15: Rà soát toàn diện main.py tuân thủ 11 điều cấm RULES.md, PEP 8 <= 88 ký tự, nghiệm thu đủ 12 file biểu đồ đạt chuẩn 300 DPI |
 
 ## 7. Việc cần làm tiếp theo
-1. Triển khai **Sprint 4 – Task T15**: Rà soát tuân thủ PEP8 và `RULES.md`, kiểm tra đủ 12 file biểu đồ chuẩn DPI 300 trong thư mục `outputs/`.
-2. Triển khai **Sprint 4 – Task T16**: Đối chiếu tiêu chí nghiệm thu trong `PRD.md` và chuẩn bị số liệu hoàn chỉnh cho báo cáo 7 phần.
+1. Triển khai **Sprint 4 – Task T16**: Đối chiếu tiêu chí nghiệm thu trong `PRD.md` và chuẩn bị số liệu hoàn chỉnh cho báo cáo 7 phần.

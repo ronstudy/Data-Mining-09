@@ -421,8 +421,10 @@ def plot_histograms_kde(
     )
     plt.tight_layout()
 
-    output_path = os.path.join(output_dir, "02_histogram_kde.png")
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    output_path = os.path.join(output_dir, "02_histogram_dac_trung.png")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    alt_path = os.path.join(output_dir, "02_histogram_kde.png")
+    fig.savefig(alt_path, dpi=300, bbox_inches="tight")
     print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
 
     plt.show()
@@ -473,8 +475,10 @@ def plot_boxplots(
     )
     plt.tight_layout()
 
-    output_path = os.path.join(output_dir, "03_boxplot.png")
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    output_path = os.path.join(output_dir, "03_boxplot_ngoai_lai.png")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    alt_path = os.path.join(output_dir, "03_boxplot.png")
+    fig.savefig(alt_path, dpi=300, bbox_inches="tight")
     print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
 
     plt.show()
@@ -577,8 +581,10 @@ def plot_correlation_heatmap(
     ax.tick_params(axis="y", rotation=0, labelsize=10)
     plt.tight_layout()
 
-    output_path = os.path.join(output_dir, "04_heatmap_tuong_quan.png")
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    output_path = os.path.join(output_dir, "04_ma_tran_tuong_quan.png")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    alt_path = os.path.join(output_dir, "04_heatmap_tuong_quan.png")
+    fig.savefig(alt_path, dpi=300, bbox_inches="tight")
     print(f"- Đã lưu biểu đồ thành công: '{output_path}'")
 
     plt.show()
@@ -1461,6 +1467,7 @@ def answer_research_question_1(
     summary_df = pd.DataFrame(eval_records)
 
     def get_val(algo_name: str, set_label: str, col_name: str) -> float:
+        """Trích xuất giá trị chỉ số từ DataFrame tổng hợp hiệu năng."""
         subset = summary_df[
             (summary_df["Thuật toán"] == algo_name)
             & (summary_df["Bộ đặc trưng"] == set_label)
