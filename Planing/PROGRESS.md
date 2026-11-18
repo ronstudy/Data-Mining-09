@@ -4,8 +4,8 @@
 | Hạng mục | Giá trị |
 |---|---|
 | Giai đoạn hiện tại | Đang thực hiện Sprint 3 (Mô hình hóa) |
-| Tiến độ | 9/16 task |
-| Cập nhật lần cuối | 2026-11-17 |
+| Tiến độ | 10/16 task |
+| Cập nhật lần cuối | 2026-11-19 |
 
 ## 2. Tình trạng tài liệu
 | File | Trạng thái |
@@ -31,7 +31,7 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 3 | T7 | Chia dữ liệu, huấn luyện 6 tổ hợp | ✅ | 2026-11-17 | Chia 80/20 stratify (10.834 Train, 2.709 Test), huấn luyện 6 tổ hợp mô hình |
 | 3 | T8 | 5-fold CV, chọn mô hình | ✅ | 2026-11-17 | 5-fold CV 6 tổ hợp; chọn Decision Tree - Hình dạng (F1 = 0.9128 ± 0.0072) |
 | 3 | T9 | Đánh giá, biểu đồ 06-08 | ✅ | 2026-11-17 | Đánh giá Test set (Acc=0.8963, F1=0.9099), xuất biểu đồ 06, 07, 08 |
-| 3 | T10 | Kết luận RQ1 | ⬜ | | |
+| 3 | T10 | Kết luận RQ1 | ✅ | 2026-11-19 | Nhóm Hình dạng vượt trội (59,95% importance; F1 CV DT: 0.9128 vs 0.8878; GNB: 0.9062 vs 0.7625) |
 | 3 | T11 | K-Means, Elbow, Silhouette | ⬜ | | |
 | 3 | T12 | Crosstab, ARI, biểu đồ 10-12 | ⬜ | | |
 | 3 | T13 | Kết luận RQ2 | ⬜ | | |
@@ -50,7 +50,11 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | Số mẫu sau khi loại trùng | 13.543 |
 | Mô hình tốt nhất (F1-macro CV) | Decision Tree - Hình dạng (8 đặc trưng) (F1 = 0.9128 ± 0.0072) |
 | Accuracy / F1-macro trên tập kiểm tra | Accuracy = 0.8963 / F1-macro = 0.9099 (Decision Tree - Hình dạng) |
-| Nhóm đặc trưng quan trọng hơn | |
+| Nhóm đặc trưng quan trọng hơn | Nhóm Hình dạng (59,95% importance; F1 CV DT: 0.9128 vs 0.8878; GNB: 0.9062 vs 0.7625) |
+| F1-macro CV theo bộ đặc trưng (Decision Tree) | Hình dạng: 0.9128 ± 0.0072 > Toàn bộ: 0.9107 ± 0.0046 > Kích thước: 0.8878 ± 0.0056 |
+| F1-macro CV theo bộ đặc trưng (GaussianNB) | Hình dạng: 0.9062 ± 0.0067 > Toàn bộ: 0.7632 ± 0.0085 > Kích thước: 0.7625 ± 0.0080 |
+| Tỷ trọng feature_importances_ (DT 16 đặc trưng) | Hình dạng: 59,95% (Top: ShapeFactor1 22,93%, Compactness 18,83%) vs Kích thước: 40,05% |
+| Kết luận RQ1 | Nhóm Hình dạng giúp phân loại 7 loại đậu chính xác hơn rõ rệt nhờ đặc tính di truyền học ổn định |
 | K tối ưu | |
 | ARI | |
 
@@ -61,7 +65,8 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 2026-11-17 | Phân chia 16 đặc trưng thành 6 đặc trưng kích thước (đơn vị đo) và 10 đặc trưng hình dạng (tỷ lệ không thứ nguyên) |
 | 2026-11-17 | Chọn mô hình tốt nhất dựa trên F1-macro 5-fold CV trên tập Train: Decision Tree - Hình dạng (8 đặc trưng) |
 | 2026-11-17 | Đánh giá mô hình tốt nhất trên tập Test (20%): Accuracy = 0.8963, F1-macro = 0.9099; Bombay đạt 100% |
+| 2026-11-19 | Kết luận RQ1: Nhóm Hình dạng vượt trội so với Kích thước trên cả 2 thuật toán (GNB +14,37%, DT +2,50%) và chiếm 59,95% importance |
 
 ## 7. Việc cần làm tiếp theo
-1. Triển khai **Task T10**: Tổng kết và trả lời câu hỏi nghiên cứu RQ1 dựa trên số liệu thực tế (vai trò nhóm kích thước vs nhóm hình dạng).
-2. Triển khai **Task T11**: Chuẩn hóa dữ liệu bằng StandardScaler và chạy K-Means K=2..10 (Elbow & Silhouette) cho RQ2.
+1. Triển khai **Task T11**: Chuẩn hóa dữ liệu bằng StandardScaler (bỏ nhãn Class), phân cụm K-Means K=2..10 (Elbow và Silhouette) để chọn K tối ưu.
+2. Triển khai **Task T12**: Fit K-Means với K tối ưu, tính crosstab và ARI so với nhãn thật, vẽ biểu đồ 10, 11 (PCA 2D) và 12 (heatmap crosstab).
