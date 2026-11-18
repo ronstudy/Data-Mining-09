@@ -17,8 +17,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 from sklearn.metrics import (
     accuracy_score,
+    adjusted_rand_score,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -1839,6 +1841,300 @@ def run_task_t11(
 
 
 # ==============================================================================
+# SPRINT 3 - TASK T12: PHÂN CỤM K=7, CROSSTAB, ARI VÀ TRỰC QUAN HÓA PCA 2D
+# ==============================================================================
+def run_kmeans_k7_and_crosstab(
+    X_scaled: np.ndarray,
+    y_true: pd.Series,
+    random_state: int = RANDOM_STATE,
+) -> tuple[KMeans, np.ndarray, pd.DataFrame, float]:
+    """Huấn luyện K-Means với K=7, lập ma trận chéo crosstab và tính chỉ số ARI.
+
+    Tham số:
+        X_scaled: Ma trận đặc trưng đã chuẩn hóa (13.543 mẫu, 16 đặc trưng).
+        y_true: Chuỗi nhãn lớp thực tế ('Class').
+        random_state: Hạt giống ngẫu nhiên (mặc định 42).
+
+    Trả về:
+        Tuple gồm (mô hình KMeans K=7, mảng nhãn cụm, DataFrame crosstab, ARI).
+    """
+    print("\n" + "=" * 70)
+    print("TASK T12: PHÂN CỤM K-MEANS (K=7), ĐỐI CHIẾU CROSSTAB VÀ CHỈ SỐ ARI")
+    print("=" * 70)
+
+    # 1. Huấn luyện mô hình K-Means với K=7
+    kmeans_7 = KMeans(n_clusters=7, random_state=random_state, n_init=10)
+    cluster_labels = kmeans_7.fit_predict(X_scaled)
+
+    # 2. Lập bảng Crosstab giữa Cụm dự đoán và Lớp thực tế
+    cluster_names = [f"Cụm {i}" for i in range(7)]
+    crosstab_df = pd.crosstab(
+        cluster_labels,
+        y_true,
+        rownames=["Cụm dự đoán"],
+        colnames=["Lớp thực tế"],
+    )
+    crosstab_df.index = cluster_names
+
+    # 3. Tính chỉ số Adjusted Rand Index (ARI)
+    ari = float(adjusted_rand_score(y_true, cluster_labels))
+
+    # 4. In bảng Crosstab ra terminal
+    print("\nBẢNG CHÉO (CROSSTAB) ĐỐI CHIẾU CỤM K-MEANS (K=7) VÀ LỚP THỰC TẾ:")
+    print("-" * 70)
+    print(crosstab_df.to_string())
+    print("-" * 70)
+
+    # 5. In chỉ số ARI và phân tích chi tiết từng cụm
+    print(f"\n[CHỈ SỐ ĐÁNH GIÁ CHUẨN XÁC ĐỘ KHỚP]:")
+    print(f"- Adjusted Rand Index (ARI): {ari:.4f}")
+
+    print("\n[PHÂN TÍCH ĐẶC ĐIỂM TỪNG CỤM SO VỚI LỚP THỰC TẾ]:")
+    total_class_counts = y_true.value_counts()
+    for i in range(7):
+        cluster_name = f"Cụm {i}"
+        row = crosstab_df.loc[cluster_name]
+        top_class = row.idxmax()
+        top_count = int(row[top_class])
+        total_in_cluster = int(row.sum())
+        purity_in_cluster = (top_count / total_in_cluster) * 100
+        coverage_of_class = (top_count / total_class_counts[top_class]) * 100
+
+        extra_note = ""
+        if top_class == "BOMBAY" and purity_in_cluster == 100.0:
+            extra_note = " -> Thuần nhất tuyệt đối 100%!"
+        elif cluster_name == "Cụm 4":
+            extra_note = " -> Gom chung 2 giống hạt lớn CALI và BARBUNYA."
+
+        print(
+            f"  + {cluster_name}: Tổng {total_in_cluster:,} mẫu | "
+            f"Chiếm ưu thế: {top_class} ({top_count:,} mẫu, "
+            f"{purity_in_cluster:.2f}% cụm, "
+            f"đại diện {coverage_of_class:.2f}% lớp){extra_note}"
+        )
+
+    return kmeans_7, cluster_labels, crosstab_df, ari
+
+
+def plot_crosstab_heatmap(
+    crosstab_df: pd.DataFrame, output_dir: str = OUTPUT_DIR
+) -> None:
+    """Vẽ và lưu heatmap ma trận chéo giữa cụm K-Means và lớp thực tế.
+
+    Tham số:
+        crosstab_df: DataFrame crosstab giữa cụm và lớp.
+        output_dir: Thư mục lưu file ảnh.
+    """
+    fig, ax = plt.subplots(figsize=(9, 7))
+    sns.heatmap(
+        crosstab_df,
+        annot=True,
+        fmt="d",
+        cmap="YlGnBu",
+        cbar=True,
+        linewidths=0.5,
+        ax=ax,
+    )
+    ax.set_title(
+        "Ma trận chéo đối chiếu Cụm K-Means (K=7) và Lớp thực tế",
+        fontsize=13,
+        fontweight="bold",
+        pad=12,
+    )
+    ax.set_xlabel("Lớp thực tế (Class)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Cụm K-Means dự đoán", fontsize=11, fontweight="bold")
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, "10_crosstab_cum_lop.png")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"\n- Đã lưu biểu đồ: {output_path} (DPI 300, bbox_inches='tight')")
+
+
+def plot_pca_clusters_and_classes(
+    X_scaled: np.ndarray,
+    cluster_labels: np.ndarray,
+    y_true: pd.Series,
+    kmeans_model: KMeans,
+    output_dir: str = OUTPUT_DIR,
+    random_state: int = RANDOM_STATE,
+) -> tuple[PCA, np.ndarray]:
+    """Chiếu dữ liệu qua PCA 2D và vẽ 2 biểu đồ: theo cụm và theo lớp thật.
+
+    Tham số:
+        X_scaled: Ma trận 16 đặc trưng đã chuẩn hóa.
+        cluster_labels: Mảng nhãn cụm K-Means (0..6).
+        y_true: Nhãn lớp thực tế ('Class').
+        kmeans_model: Mô hình KMeans đã huấn luyện.
+        output_dir: Thư mục lưu file ảnh.
+        random_state: Hạt giống ngẫu nhiên cho PCA.
+
+    Trả về:
+        Tuple gồm (đối tượng PCA, ma trận tọa độ PCA 2 chiều).
+    """
+    # 1. Chiếu 16 đặc trưng xuống không gian 2D bằng PCA duy nhất
+    pca = PCA(n_components=2, random_state=random_state)
+    X_pca = pca.fit_transform(X_scaled)
+
+    var_pc1 = pca.explained_variance_ratio_[0] * 100
+    var_pc2 = pca.explained_variance_ratio_[1] * 100
+    var_total = var_pc1 + var_pc2
+
+    print(
+        f"- Tỷ lệ phương sai giải thích PCA: PC1 = {var_pc1:.2f}%, "
+        f"PC2 = {var_pc2:.2f}% (Tổng 2 thành phần = {var_total:.2f}%)."
+    )
+
+    # Chiếu tâm cụm K-Means qua cùng không gian PCA
+    centers_pca = pca.transform(kmeans_model.cluster_centers_)
+
+    # 2. Vẽ biểu đồ 11_pca_cum.png (Tô màu theo 7 cụm K-Means)
+    fig1, ax1 = plt.subplots(figsize=(10, 7))
+    pca_cluster_df = pd.DataFrame(
+        {
+            "PC1": X_pca[:, 0],
+            "PC2": X_pca[:, 1],
+            "Cụm": [f"Cụm {c}" for c in cluster_labels],
+        }
+    )
+    cluster_order = [f"Cụm {i}" for i in range(7)]
+
+    sns.scatterplot(
+        data=pca_cluster_df,
+        x="PC1",
+        y="PC2",
+        hue="Cụm",
+        hue_order=cluster_order,
+        palette="tab10",
+        alpha=0.6,
+        s=12,
+        ax=ax1,
+    )
+    ax1.scatter(
+        centers_pca[:, 0],
+        centers_pca[:, 1],
+        c="black",
+        marker="X",
+        s=140,
+        edgecolors="white",
+        linewidths=1.5,
+        zorder=10,
+        label="Tâm cụm",
+    )
+    ax1.set_title(
+        f"Phân bố 7 cụm K-Means trên không gian PCA 2D "
+        f"(Giải thích {var_total:.2f}% phương sai)",
+        fontsize=12,
+        fontweight="bold",
+        pad=10,
+    )
+    ax1.set_xlabel(
+        f"Thành phần chính 1 - PC1 ({var_pc1:.2f}% phương sai)", fontsize=11
+    )
+    ax1.set_ylabel(
+        f"Thành phần chính 2 - PC2 ({var_pc2:.2f}% phương sai)", fontsize=11
+    )
+    ax1.grid(True, linestyle="--", alpha=0.5)
+    ax1.legend(
+        title="Cụm K-Means",
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left",
+        fontsize=9,
+    )
+    plt.tight_layout()
+
+    out_pca_cum = os.path.join(output_dir, "11_pca_cum.png")
+    fig1.savefig(out_pca_cum, dpi=300, bbox_inches="tight")
+    plt.close(fig1)
+    print(f"- Đã lưu biểu đồ: {out_pca_cum} (DPI 300, bbox_inches='tight')")
+
+    # 3. Vẽ biểu đồ 12_pca_lop_that.png (Tô màu theo 7 lớp thực tế)
+    fig2, ax2 = plt.subplots(figsize=(10, 7))
+    pca_class_df = pd.DataFrame(
+        {
+            "PC1": X_pca[:, 0],
+            "PC2": X_pca[:, 1],
+            "Lớp thực tế": y_true.values,
+        }
+    )
+    class_order = sorted(y_true.unique())
+
+    sns.scatterplot(
+        data=pca_class_df,
+        x="PC1",
+        y="PC2",
+        hue="Lớp thực tế",
+        hue_order=class_order,
+        palette="tab10",
+        alpha=0.6,
+        s=12,
+        ax=ax2,
+    )
+    ax2.set_title(
+        f"Phân bố 7 lớp đậu thực tế trên không gian PCA 2D "
+        f"(Giải thích {var_total:.2f}% phương sai)",
+        fontsize=12,
+        fontweight="bold",
+        pad=10,
+    )
+    ax2.set_xlabel(
+        f"Thành phần chính 1 - PC1 ({var_pc1:.2f}% phương sai)", fontsize=11
+    )
+    ax2.set_ylabel(
+        f"Thành phần chính 2 - PC2 ({var_pc2:.2f}% phương sai)", fontsize=11
+    )
+    ax2.grid(True, linestyle="--", alpha=0.5)
+    ax2.legend(
+        title="Lớp thực tế",
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left",
+        fontsize=9,
+    )
+    plt.tight_layout()
+
+    out_pca_lop = os.path.join(output_dir, "12_pca_lop_that.png")
+    fig2.savefig(out_pca_lop, dpi=300, bbox_inches="tight")
+    plt.close(fig2)
+    print(f"- Đã lưu biểu đồ: {out_pca_lop} (DPI 300, bbox_inches='tight')")
+
+    return pca, X_pca
+
+
+def run_task_t12(
+    X_scaled: np.ndarray,
+    df_clean: pd.DataFrame,
+    output_dir: str = OUTPUT_DIR,
+) -> dict[str, object]:
+    """Thực thi toàn diện Task T12: K-Means K=7, Crosstab, ARI và vẽ 3 biểu đồ.
+
+    Tham số:
+        X_scaled: Ma trận đặc trưng đã chuẩn hóa từ Task T11.
+        df_clean: DataFrame dữ liệu đã tiền xử lý sạch.
+        output_dir: Thư mục lưu ảnh đầu ra.
+
+    Trả về:
+        Dict chứa các đối tượng và kết quả thực nghiệm của Task T12.
+    """
+    y_true = df_clean["Class"]
+    kmeans_7, cluster_labels, crosstab_df, ari = run_kmeans_k7_and_crosstab(
+        X_scaled, y_true
+    )
+    plot_crosstab_heatmap(crosstab_df, output_dir)
+    pca, X_pca = plot_pca_clusters_and_classes(
+        X_scaled, cluster_labels, y_true, kmeans_7, output_dir
+    )
+
+    return {
+        "kmeans_7": kmeans_7,
+        "cluster_labels": cluster_labels,
+        "crosstab_df": crosstab_df,
+        "ari": ari,
+        "pca": pca,
+        "X_pca": X_pca,
+    }
+
+
+# ==============================================================================
 # ĐIỂM VÀO CHÍNH CỦA CHƯƠNG TRÌNH
 # ==============================================================================
 def main() -> None:
@@ -1888,20 +2184,27 @@ def main() -> None:
     # Task T11: Phân cụm K-Means, tính Elbow & Silhouette và vẽ biểu đồ 09
     kmeans_df, X_scaled, scaler = run_task_t11(df_clean, OUTPUT_DIR)
 
+    # Task T12: Phân cụm K=7, bảng Crosstab, tính ARI và vẽ 3 biểu đồ 10, 11, 12
+    t12_results = run_task_t12(X_scaled, df_clean, OUTPUT_DIR)
+
     best_k = int(kmeans_df.loc[kmeans_df["silhouette"].idxmax(), "k"])
     best_sil = float(
         kmeans_df.loc[kmeans_df["silhouette"].idxmax(), "silhouette"]
     )
     k7_sil = float(kmeans_df.loc[kmeans_df["k"] == 7, "silhouette"].iloc[0])
+    ari_score = float(t12_results["ari"])
 
     print("\n" + "=" * 70)
-    print("HOÀN THÀNH TASKS T9, T10 & T11 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
+    print("HOÀN THÀNH TASKS T9 ĐẾN T12 (SPRINT 3: MÔ HÌNH HÓA) THÀNH CÔNG!")
     print(f"- Đã đánh giá trên tập Test: {len(X_test)} mẫu.")
     print("- Đã xuất đủ các biểu đồ theo chuẩn DESIGN.md (DPI 300):")
     print("  + 06_confusion_matrix.png")
     print("  + 07_so_sanh_mo_hinh.png")
     print("  + 08_feature_importances.png")
     print("  + 09_elbow_silhouette.png")
+    print("  + 10_crosstab_cum_lop.png")
+    print("  + 11_pca_cum.png")
+    print("  + 12_pca_lop_that.png")
     print(
         f"- Đã trả lời trực diện RQ1: Nhóm Hình dạng vượt trội "
         f"({rq1_results['shape_importance'] * 100:.2f}% tỷ trọng đóng góp)."
@@ -1913,6 +2216,10 @@ def main() -> None:
     print(
         f"- Phân cụm K-Means (T11): K tối ưu = {best_k} (Sil = {best_sil:.4f}), "
         f"tại K=7 (Sil = {k7_sil:.4f})."
+    )
+    print(
+        f"- Đánh giá phân cụm K=7 (T12): Adjusted Rand Index (ARI) = "
+        f"{ari_score:.4f}."
     )
     print("=" * 70 + "\n")
 

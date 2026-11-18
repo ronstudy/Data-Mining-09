@@ -4,7 +4,7 @@
 | Hạng mục | Giá trị |
 |---|---|
 | Giai đoạn hiện tại | Đang thực hiện Sprint 3 (Mô hình hóa) |
-| Tiến độ | 11/16 task |
+| Tiến độ | 12/16 task |
 | Cập nhật lần cuối | 2026-11-19 |
 
 ## 2. Tình trạng tài liệu
@@ -33,7 +33,7 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 3 | T9 | Đánh giá, biểu đồ 06-08 | ✅ | 2026-11-17 | Đánh giá Test set (Acc=0.8963, F1=0.9099), xuất biểu đồ 06, 07, 08 |
 | 3 | T10 | Kết luận RQ1 | ✅ | 2026-11-19 | Nhóm Hình dạng vượt trội (59,95% importance; F1 CV DT: 0.9128 vs 0.8878; GNB: 0.9062 vs 0.7625) |
 | 3 | T11 | K-Means, Elbow, Silhouette | ✅ | 2026-11-19 | Chạy KMeans K=2..10 trên 13.543 mẫu chuẩn hóa, xuất 09_elbow_silhouette.png; Sil cao nhất tại K=3 (0.4044), tại K=7 là 0.3088 |
-| 3 | T12 | Crosstab, ARI, biểu đồ 10-12 | ⬜ | | |
+| 3 | T12 | Crosstab, ARI, biểu đồ 10-12 | ✅ | 2026-11-19 | KMeans K=7, ARI = 0.6669, PCA 2D giải thích 81.91% phương sai; xuất ảnh 10 (crosstab), 11 (PCA cụm), 12 (PCA nhãn thật) |
 | 3 | T13 | Kết luận RQ2 | ⬜ | | |
 | 4 | T14 | Chạy hai lần, kiểm tra tái lập | ⬜ | | |
 | 4 | T15 | Rà PEP8, RULES, biểu đồ | ⬜ | | |
@@ -58,7 +58,9 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | K tối ưu (Silhouette) | K = 3 (Silhouette = 0.4044; Inertia = 94.331,7346) |
 | Chỉ số tại K = 7 (số lớp thực tế) | Silhouette = 0.3088; Inertia = 48.671,4570 |
 | Tốc độ suy giảm Inertia (Elbow) | Phẳng dần từ K = 3 đến K = 5 (tụ về 3 nhóm hình thái tự nhiên) |
-| ARI | |
+| ARI (K=7 K-Means so với 7 lớp thực tế) | 0.6669 (mức độ tương đồng phân cụm và phân loại khá cao) |
+| Độ thuần nhất cụm K-Means (K=7) | Cụm 3: BOMBAY (100% thuần nhất); Cụm 0: DERMASON (92,21%); Cụm 2: HOROZ (93,83%); Cụm 5: SEKER (92,18%); Cụm 6: SIRA (74,71%); Cụm 4 gom chung CALI và BARBUNYA |
+| Tỷ lệ phương sai giải thích PCA 2D | PC1 = 55,55%, PC2 = 26,36% (Tổng = 81,91% phương sai toàn bộ 16 đặc trưng) |
 
 ## 6. Nhật ký quyết định
 | Ngày | Quyết định |
@@ -69,7 +71,8 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 2026-11-17 | Đánh giá mô hình tốt nhất trên tập Test (20%): Accuracy = 0.8963, F1-macro = 0.9099; Bombay đạt 100% |
 | 2026-11-19 | Kết luận RQ1: Nhóm Hình dạng vượt trội so với Kích thước trên cả 2 thuật toán (GNB +14,37%, DT +2,50%) và chiếm 59,95% importance |
 | 2026-11-19 | Hoàn thành T11: Phân cụm K-Means K=2..10 trên 13.543 mẫu chuẩn hóa, xác định K=3 đạt Silhouette cực đại (0.4044), Elbow phẳng từ K=3..5 |
+| 2026-11-19 | Hoàn thành T12: Chạy KMeans K=7, lập crosstab, tính ARI = 0.6669, phân tích PCA 2D (81.91% phương sai), xuất 10_crosstab_cum_lop.png, 11_pca_cum.png, 12_pca_lop_that.png |
 
 ## 7. Việc cần làm tiếp theo
-1. Triển khai **Task T12**: Fit K-Means với K tối ưu, tính crosstab và ARI so với nhãn thật, vẽ biểu đồ 10, 11 (PCA 2D) và 12 (heatmap crosstab).
-2. Triển khai **Task T13**: Kết luận câu hỏi nghiên cứu RQ2 (K tối ưu và độ khớp với 7 loại đậu thực tế).
+1. Triển khai **Task T13**: Kết luận câu hỏi nghiên cứu RQ2 (độ khớp của phân cụm K-Means với 7 lớp thực tế, ý nghĩa ARI = 0.6669 và K tối ưu K=3 vs K=7).
+2. Triển khai **Sprint 4 (Nghiệm thu)**: Task T14 (chạy hai lần kiểm tra tái lập), T15 (rà soát PEP8/RULES), T16 (nghiệm thu tiêu chí PRD).
