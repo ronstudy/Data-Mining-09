@@ -3,8 +3,8 @@
 ## 1. Tổng quan
 | Hạng mục | Giá trị |
 |---|---|
-| Giai đoạn hiện tại | Đang thực hiện Sprint 4 (Nghiệm thu) |
-| Tiến độ | 15/16 task |
+| Giai đoạn hiện tại | Hoàn tất toàn bộ dự án |
+| Tiến độ | 16/16 task (100%) |
 | Cập nhật lần cuối | 2026-11-19 |
 
 ## 2. Tình trạng tài liệu
@@ -37,7 +37,7 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 3 | T13 | Kết luận RQ2 | ✅ | 2026-11-19 | K tối ưu K=3 (Silhouette=0.4044), tại K=7 đạt ARI=0.6669; K-Means tách sạch Bombay (100%), Horoz, Seker, Dermason; gom chung Cali/Barbunya |
 | 4 | T14 | Chạy hai lần, kiểm tra tái lập | ✅ | 2026-11-19 | Chạy 2 lần liên tiếp độc lập (exit code 0); 961 dòng output console trùng khớp 100% từng số liệu |
 | 4 | T15 | Rà PEP8, RULES, biểu đồ | ✅ | 2026-11-19 | Đạt chuẩn 100% PEP8 (<= 88 ký tự/dòng), 35/35 hàm có docstring; nghiệm thu đủ 12/12 biểu đồ đạt 300 DPI |
-| 4 | T16 | Đối chiếu PRD, chuẩn bị báo cáo | ⬜ | | |
+| 4 | T16 | Đối chiếu PRD, chuẩn bị báo cáo | ✅ | 2026-11-19 | Đối chiếu đạt 5/5 tiêu chí nghiệm thu PRD.md, hoàn thiện bảng kết quả thực nghiệm và biên soạn báo cáo học thuật 7 phần |
 
 ## 4. Bug Tracker
 | ID | Ngày | Task liên quan | Mô tả lỗi | Mức độ | Trạng thái | Cách xử lý |
@@ -47,21 +47,20 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 ## 5. Kết quả chính (điền khi có số liệu thực)
 | Chỉ số | Giá trị |
 |---|---|
-| Số mẫu sau khi loại trùng | 13.543 |
-| Mô hình tốt nhất (F1-macro CV) | Decision Tree - Hình dạng (8 đặc trưng) (F1 = 0.9128 ± 0.0072) |
-| Accuracy / F1-macro trên tập kiểm tra | Accuracy = 0.8963 / F1-macro = 0.9099 (Decision Tree - Hình dạng) |
-| Nhóm đặc trưng quan trọng hơn | Nhóm Hình dạng (59,95% importance; F1 CV DT: 0.9128 vs 0.8878; GNB: 0.9062 vs 0.7625) |
+| Số mẫu sau khi loại trùng | 13.543 mẫu (từ 13.611 mẫu gốc, loại bỏ 68 dòng trùng lặp hoàn toàn, 0 giá trị thiếu) |
+| Mô hình tốt nhất (F1-macro CV) | Decision Tree - Hình dạng (8 đặc trưng) (F1-macro CV = 0.9128 ± 0.0072, Accuracy CV = 0.8984 ± 0.0072) |
+| Accuracy / F1-macro trên tập kiểm tra | Accuracy = 0.8963 (89,63%) / F1-macro = 0.9099 (90,99%) (Decision Tree - Hình dạng trên 2.709 mẫu Test) |
+| Nhóm đặc trưng quan trọng hơn | Nhóm Hình dạng (chiếm 59,95% tổng Gini Importance; F1-macro CV vượt nhóm Kích thước +2,50% trên Decision Tree và +14,37% trên GaussianNB) |
+| K tối ưu | K = 3 (Silhouette Score cực đại = 0.4044, Inertia = 94.331,7346); tại mốc K = 7 (số lớp thực tế) đạt Silhouette = 0.3088, Inertia = 48.671,4570 |
+| Chỉ số ARI | 0.6669 (K-Means K = 7 đối chiếu với 7 nhãn lớp thực tế trên 13.543 mẫu) |
 | F1-macro CV theo bộ đặc trưng (Decision Tree) | Hình dạng: 0.9128 ± 0.0072 > Toàn bộ: 0.9107 ± 0.0046 > Kích thước: 0.8878 ± 0.0056 |
 | F1-macro CV theo bộ đặc trưng (GaussianNB) | Hình dạng: 0.9062 ± 0.0067 > Toàn bộ: 0.7632 ± 0.0085 > Kích thước: 0.7625 ± 0.0080 |
 | Tỷ trọng feature_importances_ (DT 16 đặc trưng) | Hình dạng: 59,95% (Top: ShapeFactor1 22,93%, Compactness 18,83%) vs Kích thước: 40,05% |
 | Kết luận RQ1 | Nhóm Hình dạng giúp phân loại 7 loại đậu chính xác hơn rõ rệt nhờ đặc tính di truyền học ổn định |
-| K tối ưu (Silhouette) | K = 3 (Silhouette = 0.4044; Inertia = 94.331,7346) |
-| Chỉ số tại K = 7 (số lớp thực tế) | Silhouette = 0.3088; Inertia = 48.671,4570 |
 | Tốc độ suy giảm Inertia (Elbow) | Phẳng dần từ K = 3 đến K = 5 (tụ về 3 nhóm hình thái tự nhiên) |
-| ARI (K=7 K-Means so với 7 lớp thực tế) | 0.6669 (mức độ tương đồng phân cụm và phân loại khá cao) |
-| Độ thuần nhất cụm K-Means (K=7) | Cụm 3: BOMBAY (100% thuần nhất); Cụm 0: DERMASON (92,21%); Cụm 2: HOROZ (93,83%); Cụm 5: SEKER (92,18%); Cụm 6: SIRA (74,71%); Cụm 4 gom chung CALI và BARBUNYA |
+| Độ thuần nhất cụm K-Means (K=7) | Cụm 3: BOMBAY (100,00% thuần nhất); Cụm 0: DERMASON (92,21%); Cụm 2: HOROZ (93,83%); Cụm 5: SEKER (92,18%); Cụm 6: SIRA (74,71%); Cụm 4 gom chung CALI và BARBUNYA |
 | Tỷ lệ phương sai giải thích PCA 2D | PC1 = 55,55%, PC2 = 26,36% (Tổng = 81,91% phương sai toàn bộ 16 đặc trưng) |
-| Kết luận RQ2 | K tối ưu là K=3 (Silhouette=0.4044); K-Means K=7 đạt ARI = 0.6669 khớp rất tốt với phân loại sinh học, tái tạo thuần khiết 4/7 giống đậu |
+| Kết luận RQ2 | K tối ưu là K=3 (Silhouette=0.4044); K-Means K=7 đạt ARI = 0.6669 khớp khá cao với phân loại sinh học, tái tạo thuần khiết 4/7 giống đậu |
 | Tính tái lập (Reproducibility - T14) | Trùng khớp 100% kết quả trên 2 lần chạy độc lập (961 dòng output giống hệt nhau) |
 
 ## 6. Nhật ký quyết định
@@ -77,6 +76,8 @@ Ký hiệu: ⬜ Chưa làm, 🔄 Đang làm, ✅ Xong, ❌ Bị chặn.
 | 2026-11-19 | Hoàn thành T13: Trả lời câu hỏi RQ2, kết luận K tối ưu K=3 (Sil=0.4044) và độ khớp với 7 loại đậu thực tế ARI = 0.6669 (Sprint 3 hoàn tất 100%) |
 | 2026-11-19 | Hoàn thành T14: Kiểm tra tính tái lập (reproducibility) thành công, chạy 2 lần liên tiếp khớp 100% số liệu (961 dòng output giống hệt nhau) |
 | 2026-11-19 | Hoàn thành T15: Rà soát toàn diện main.py tuân thủ 11 điều cấm RULES.md, PEP 8 <= 88 ký tự, nghiệm thu đủ 12 file biểu đồ đạt chuẩn 300 DPI |
+| 2026-11-19 | Chốt phương án chuẩn hóa & tái lập: Chỉ áp dụng StandardScaler cho K-Means và PCA 2D (giữ dữ liệu thô cho GaussianNB/Decision Tree, không đưa cột Class vào K-Means); cố định RANDOM_STATE = 42 xuyên suốt chia tập 80/20 (stratify=y), 5-fold CV, Decision Tree, K-Means và PCA |
+| 2026-11-19 | Hoàn thành T16: Nghiệm thu đạt 5/5 tiêu chí PRD.md, tổng hợp số liệu thực nghiệm và bàn giao báo cáo học thuật 7 phần (Hoàn tất 16/16 task - 100%) |
 
 ## 7. Việc cần làm tiếp theo
-1. Triển khai **Sprint 4 – Task T16**: Đối chiếu tiêu chí nghiệm thu trong `PRD.md` và chuẩn bị số liệu hoàn chỉnh cho báo cáo 7 phần.
+Toàn bộ 16/16 task thuộc 4 Sprint đã hoàn thành 100%. Dự án sẵn sàng bàn giao và bảo vệ trước hội đồng.
