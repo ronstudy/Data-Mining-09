@@ -1,0 +1,1 @@
+{"install": "pip install --break-system-packages -q pandas numpy scikit-learn matplotlib seaborn jupyter nbconvert ipykernel"}
