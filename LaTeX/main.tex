@@ -10,6 +10,8 @@
 \usepackage{graphicx}
 \usepackage{tocbibind} % Để thêm mục lục, tài liệu tham khảo vào mục lục
 \usepackage{float} % Thêm gói float để sử dụng [H]
+\usepackage{longtable}
+\usepackage{multirow}
 
 % Thiết lập lề trang
 \geometry{a4paper, left=3cm, right=2cm, top=2.5cm, bottom=2.5cm}
@@ -55,5 +57,658 @@
 \tableofcontents
 \clearpage
 \renewcommand{\thesection}{\arabic{section}}
+
+% ==============================================================================
+% PHẦN 1: GIỚI THIỆU ĐỀ TÀI & PHÂN CÔNG CÔNG VIỆC NHÓM
+% ==============================================================================
+\section{Giới thiệu Đề tài \& Phân công Công việc Nhóm}
+
+\subsection{Bối cảnh và Bài toán Dry Bean Dataset}
+Trong lĩnh vực nông nghiệp thông minh và kiểm soát chất lượng nông sản, việc phân loại chính xác các giống đậu khô thương phẩm đóng vai trò quan trọng trong định giá thị trường, kiểm định giống và tối ưu hóa dây chuyền sơ chế. Phương pháp phân loại thủ công dựa trên quan sát trực quan của con người thường tiêu tốn nhiều thời gian, thiếu tính nhất quán và dễ sai sót khi gặp các giống hạt có hình thái tương đồng.
+
+Nghiên cứu này thực hiện quy trình khai phá dữ liệu hoàn chỉnh trên tập dữ liệu chuẩn \textbf{Dry Bean Dataset} (Koklu \& Ozkan, 2020; mã định danh UCI Machine Learning Repository: 602). Dữ liệu được trích xuất từ ảnh chụp độ phân giải cao của hệ thống thị giác máy tính, bao gồm tổng cộng \textbf{13.611 mẫu hạt đậu khô}, được mô tả bởi \textbf{16 đặc trưng hình thái số} (chia thành hai nhóm: 8 đặc trưng kích thước và 8 đặc trưng hình dạng) cùng \textbf{1 thuộc tính nhãn lớp} (\texttt{Class}) đại diện cho \textbf{7 giống đậu thương phẩm} gồm: \texttt{BARBUNYA}, \texttt{BOMBAY}, \texttt{CALI}, \texttt{DERMASON}, \texttt{HOROZ}, \texttt{SEKER} và \texttt{SIRA}.
+
+\subsection{Mục tiêu Đồ án và Hai Câu hỏi Nghiên cứu Cốt lõi}
+Mục tiêu của đồ án là xây dựng một quy trình khai phá dữ liệu (\textit{Data Mining Pipeline}) khép kín, tường minh và có tính tái lập tuyệt đối (\texttt{RANDOM\_STATE = 42}), được triển khai đồng bộ trên cả tệp kịch bản dòng lệnh độc lập (\texttt{main.py}) và sổ tay tương tác học thuật (\texttt{dry\_beans.ipynb}). Quy trình đi xuyên suốt từ thẩm định toàn vẹn dữ liệu, tiền xử lý, phân tích khám phá dữ liệu (EDA) đến mô hình hóa học có giám sát và học không giám sát nhằm giải đáp hai câu hỏi nghiên cứu cốt lõi:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Câu hỏi nghiên cứu 1 (RQ1 -- Học có giám sát / Phân loại):} \textit{Dựa vào nhóm đặc trưng nào -- kích thước (\texttt{Area}, \texttt{Perimeter}, ...) hay hình dạng (\texttt{roundness}, \texttt{ShapeFactor}, ...) -- để xác định giống đậu chính xác hơn?}
+    
+    Để trả lời RQ1 một cách khách quan, nhóm triển khai đối chứng hai thuật toán phân loại đại diện cho hai trường phái khác nhau là \texttt{GaussianNB} (xác suất thống kê) và \texttt{DecisionTreeClassifier} (cây quyết định phi tham số) trên ba bộ đặc trưng (Toàn bộ 16 đặc trưng, Nhóm Kích thước 8 đặc trưng, Nhóm Hình dạng 8 đặc trưng) bằng dữ liệu thô, đánh giá qua kiểm định chéo phân tầng 5-fold (\textit{5-fold Stratified Cross-Validation}) trên tập huấn luyện (80\%), chọn mô hình tốt nhất theo \texttt{F1-macro CV}, sau đó kiểm chứng trên tập kiểm tra độc lập (20\%) và đối chiếu trọng số tầm quan trọng Gini (\texttt{feature\_importances\_}).
+    
+    \item \textbf{Câu hỏi nghiên cứu 2 (RQ2 -- Học không giám sát / Phân cụm):} \textit{Số cụm tự nhiên tối ưu của thuật toán K-Means là bao nhiêu, và các cụm tìm được có khớp với 7 giống đậu thực tế không?}
+    
+    Để trả lời RQ2, nhóm tách bỏ hoàn toàn nhãn \texttt{Class}, chuẩn hóa 16 đặc trưng bằng \texttt{StandardScaler}, khảo sát thuật toán \texttt{KMeans} với dải số cụm $K \in [2, 10]$ qua đường cong Elbow (Inertia/WCSS) và hệ số Silhouette để xác định $K$ tối ưu. Tiếp đó, nhóm đối chiếu kết quả phân cụm tại mốc $K = 7$ với 7 nhãn giống đậu thực tế thông qua bảng chéo (\textit{Crosstab}), chỉ số \textit{Adjusted Rand Index} (ARI) và trực quan hóa trên không gian giảm chiều PCA 2D.
+\end{enumerate}
+
+\subsection{Phân công Công việc Nhóm}
+Đồ án được thực hiện bởi Nhóm 9 gồm 2 thành viên, chia thành 4 giai đoạn (Sprint 1 đến Sprint 4) với tổng cộng 16 đầu việc (\texttt{T1} đến \texttt{T16}). Tỷ lệ phân bổ khối lượng công việc và phạm vi trách nhiệm cụ thể của từng thành viên được tổng hợp tại Bảng~\ref{tab:phan_cong_nhom}.
+
+\begin{longtable}{@{}p{3.4cm} c p{10.6cm}@{}}
+\caption{Bảng phân công công việc chi tiết của Nhóm 9 (16 tasks qua 4 Sprint)} \label{tab:phan_cong_nhom} \\
+\toprule
+\textbf{Giai đoạn (Sprint)} & \textbf{Mã} & \textbf{Phạm vi công việc cụ thể} \\
+\midrule
+\endfirsthead
+\multicolumn{3}{c}{\textit{(Tiếp theo Bảng~\ref{tab:phan_cong_nhom})}} \\
+\toprule
+\textbf{Giai đoạn (Sprint)} & \textbf{Mã} & \textbf{Phạm vi công việc cụ thể} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{(Còn tiếp trang sau)}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+
+\multicolumn{3}{@{}l@{}}{\textbf{1. Trương Chí Long (MSSV: 3123410198) -- Phụ trách 10/16 tasks (62,5\%)}} \\
+\midrule
+Sprint 1: Chuẩn bị, nạp \& tiền xử lý & \texttt{T1} & Khởi tạo khung dự án, tích hợp tệp dữ liệu \texttt{dry\_beans.csv}, cấu hình thư viện và khung mã nguồn \texttt{main.py}. \\
+ & \texttt{T2} & Xây dựng hàm \texttt{load\_data}: đọc CSV, kiểm tra tồn tại file/đủ 17 cột, báo lỗi tiếng Việt tường minh, in kích thước, kiểu dữ liệu và phân bố 7 lớp ban đầu. \\
+ & \texttt{T3} & Xây dựng hàm \texttt{preprocess}: kiểm tra giá trị thiếu, loại bỏ dòng trùng lặp, phát hiện ngoại lai bằng IQR (giữ nguyên), tách 2 nhóm đặc trưng kích thước và hình dạng. \\
+\cmidrule(l){1-3}
+Sprint 2: EDA \& Thống kê & \texttt{T4} & Tính bảng thống kê mô tả 16 đặc trưng và vẽ Biểu đồ 01 (\texttt{01\_phan\_bo\_lop.png}) phân bố 7 lớp đậu. \\
+ & \texttt{T5} & Trực quan hóa đơn biến lưới $4 \times 4$: Biểu đồ 02 (Histogram + KDE) và Biểu đồ 03 (Boxplot quan sát ngoại lai). \\
+ & \texttt{T6} & Trực quan hóa đa biến: Biểu đồ 04 (Heatmap tương quan lọc cặp $|r| > 0.9$), Biểu đồ 05 (Boxplot theo 7 lớp) và viết nhận xét EDA. \\
+\cmidrule(l){1-3}
+Sprint 3: Mô hình hóa (Phân loại) & \texttt{T7} & Chia tập Train/Test 80/20 có \texttt{stratify}, huấn luyện \texttt{GaussianNB} và \texttt{Decision Tree} trên 3 bộ đặc trưng bằng dữ liệu thô. \\
+ & \texttt{T8} & Thực hiện 5-fold Stratified CV cho cả 6 tổ hợp trên tập Train, chọn mô hình tốt nhất theo \texttt{F1-macro CV}. \\
+ & \texttt{T9} & Đánh giá tập kiểm tra (20\%), vẽ Biểu đồ 06 (Confusion Matrix), Biểu đồ 07 (So sánh 6 mô hình), Biểu đồ 08 (\texttt{feature\_importances\_}) và chỉ ra cặp lớp hay nhầm lẫn. \\
+\cmidrule(l){1-3}
+Sprint 4: Nghiệm thu & \texttt{T16} & Đối chiếu toàn bộ tiêu chí nghiệm thu theo \texttt{PRD.md} và tổng hợp số liệu chuẩn bị cho báo cáo học thuật 7 phần. \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textbf{2. Bùi Anh Đức (MSSV: 3124720016) -- Phụ trách 6/16 tasks (37,5\%)}} \\
+\midrule
+Sprint 3: Kết luận RQ1 \& Phân cụm & \texttt{T10} & Tổng hợp bằng chứng định lượng và viết kết luận dứt khoát trả lời câu hỏi nghiên cứu RQ1. \\
+ & \texttt{T11} & Áp dụng \texttt{StandardScaler} (bỏ cột \texttt{Class}), chạy K-Means với $K = 2..10$, vẽ Biểu đồ 09 (Elbow \& Silhouette), lựa chọn $K$ tối ưu kèm lập luận. \\
+ & \texttt{T12} & Huấn luyện K-Means tại $K$ tối ưu và mốc đối chiếu $K = 7$, tính Crosstab và ARI, vẽ các biểu đồ PCA 2D và Heatmap Crosstab (Biểu đồ 10, 11, 12). \\
+ & \texttt{T13} & Phân tích độ tinh khiết từng cụm và viết kết luận dứt khoát trả lời RQ2 về $K$ tối ưu cùng mức độ khớp với 7 giống đậu thật. \\
+\cmidrule(l){1-3}
+Sprint 4: Nghiệm thu & \texttt{T14} & Thực thi \texttt{main.py} độc lập hai lần để kiểm chứng tính tất định và khả năng tái lập 100\% với \texttt{RANDOM\_STATE = 42}. \\
+ & \texttt{T15} & Rà soát chuẩn mã nguồn PEP 8, quy ước \texttt{RULES.md} và kiểm tra đầy đủ 12 tệp biểu đồ PNG đạt chuẩn độ phân giải 300 DPI. \\
+\end{longtable}
+
+% ==============================================================================
+% PHẦN 2: DỮ LIỆU & QUY TRÌNH TIỀN XỬ LÝ
+% ==============================================================================
+\section{Dữ liệu \& Quy trình Tiền xử lý}
+
+\subsection{Cấu trúc Tập dữ liệu và Phân nhóm 16 Đặc trưng}
+Tệp dữ liệu đầu vào \texttt{dry\_beans.csv} có kích thước ban đầu gồm \textbf{13.611 dòng} và \textbf{17 cột}, trong đó có 2 cột kiểu số nguyên (\texttt{int64}: \texttt{Area}, \texttt{ConvexArea}), 14 cột kiểu số thực (\texttt{float64}) và 1 cột chuỗi nhãn mục tiêu (\texttt{Class}). Để phục vụ trực tiếp bài toán đối chứng của RQ1, 16 đặc trưng hình thái được phân chia rõ ràng thành 2 nhóm cân bằng (mỗi nhóm 8 đặc trưng) như trình bày trong Bảng~\ref{tab:mo_ta_dac_trung}.
+
+\begin{table}[H]
+\centering
+\caption{Mô tả chi tiết 16 đặc trưng hình thái theo 2 nhóm và cột nhãn mục tiêu \texttt{Class}}
+\label{tab:mo_ta_dac_trung}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}clcl@{}}
+\toprule
+\textbf{Nhóm} & \textbf{Tên đặc trưng} & \textbf{Kiểu dữ liệu} & \textbf{Ý nghĩa hình thái học} \\
+\midrule
+\multirow{8}{*}{\textbf{Kích thước (8)}}
+ & \texttt{Area} & \texttt{int64} & Diện tích vùng hạt đậu trên ảnh nhị phân (số pixel). \\
+ & \texttt{Perimeter} & \texttt{float64} & Chu vi đường biên bao quanh hạt đậu. \\
+ & \texttt{MajorAxisLength} & \texttt{float64} & Chiều dài trục lớn của hình elip có cùng mô-men quán tính với hạt. \\
+ & \texttt{MinorAxisLength} & \texttt{float64} & Chiều dài trục nhỏ của hình elip tương đương. \\
+ & \texttt{AspectRation} & \texttt{float64} & Tỷ số giữa trục lớn và trục nhỏ ($L / l$), đo mức độ thon dài. \\
+ & \texttt{Eccentricity} & \texttt{float64} & Độ lệch tâm của elip tương đương (giá trị càng gần 1 hạt càng dài). \\
+ & \texttt{ConvexArea} & \texttt{int64} & Diện tích đa giác lồi nhỏ nhất bao trọn vùng hạt đậu (pixel). \\
+ & \texttt{EquivDiameter} & \texttt{float64} & Đường kính của hình tròn có cùng diện tích với hạt ($\sqrt{4A/\pi}$). \\
+\midrule
+\multirow{8}{*}{\textbf{Hình dạng (8)}}
+ & \texttt{Extent} & \texttt{float64} & Tỷ số giữa diện tích hạt và diện tích hình chữ nhật ngoại tiếp. \\
+ & \texttt{Solidity} & \texttt{float64} & Độ đặc (độ lồi), bằng tỷ số diện tích hạt trên diện tích bao lồi ($A / A_c$). \\
+ & \texttt{roundness} & \texttt{float64} & Độ tròn của biên hạt, tính theo công thức $4\pi A / P^2$. \\
+ & \texttt{Compactness} & \texttt{float64} & Độ nén của hình thái hạt, bằng tỷ số \texttt{EquivDiameter} / \texttt{MajorAxisLength}. \\
+ & \texttt{ShapeFactor1} & \texttt{float64} & Hệ số hình dạng 1, biểu thị tỷ số trục lớn trên diện tích ($L / A$). \\
+ & \texttt{ShapeFactor2} & \texttt{float64} & Hệ số hình dạng 2, biểu thị tỷ số trục nhỏ trên diện tích ($l / A$). \\
+ & \texttt{ShapeFactor3} & \texttt{float64} & Hệ số hình dạng 3, bằng $4A / (\pi L^2)$ (tương đương bình phương \texttt{Compactness}). \\
+ & \texttt{ShapeFactor4} & \texttt{float64} & Hệ số hình dạng 4, bằng $4A / (\pi L l)$ (đo mức độ khớp với hình elip chuẩn). \\
+\midrule
+\textbf{Nhãn (1)} & \texttt{Class} & \texttt{str} & 7 giống đậu khô: \texttt{BARBUNYA}, \texttt{BOMBAY}, \texttt{CALI}, \texttt{DERMASON}, \texttt{HOROZ}, \texttt{SEKER}, \texttt{SIRA}. \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textit{Ghi chú:} Tên thuộc tính \texttt{AspectRation} và \texttt{roundness} được giữ nguyên đúng chính tả gốc trong tệp dữ liệu UCI nhằm đảm bảo tính đồng nhất với mã nguồn xử lý.
+
+\subsection{Kiểm tra Toàn vẹn, Khuyết thiếu và Loại bỏ Dữ liệu Trùng lặp}
+Hàm \texttt{load\_data} tích hợp cơ chế kiểm tra tự động sự tồn tại của tệp \texttt{dry\_beans.csv} và đối chiếu đủ 17 cột bắt buộc; nếu thiếu sẽ cảnh báo bằng tiếng Việt và dừng an toàn với mã thoát \texttt{1}. Kết quả thực thi bước tiền xử lý (\texttt{preprocess}) ghi nhận:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Giá trị khuyết thiếu (\texttt{NaN}):} Ghi nhận \textbf{0 giá trị thiếu} trên toàn bộ $13.611 \times 17$ ô dữ liệu. Dữ liệu hoàn toàn đầy đủ, không cần áp dụng các kỹ thuật nội suy hay điền khuyết.
+    \item \textbf{Dữ liệu trùng lặp hoàn toàn:} Phát hiện chính xác \textbf{68 dòng trùng lặp hoàn toàn} (kiểm tra bằng \texttt{df.duplicated().sum()}). Thống kê đối chiếu cho thấy toàn bộ 68 dòng trùng lặp này đều thuộc lớp \texttt{HOROZ} (giảm số mẫu \texttt{HOROZ} từ 1.928 xuống còn 1.860 mẫu). Nhóm tiến hành loại bỏ toàn bộ 68 bản ghi trùng lặp để ngăn chặn rò rỉ dữ liệu (\textit{data leakage}) giữa tập huấn luyện và tập kiểm tra cũng như tránh làm sai lệch trọng số mẫu.
+    \item \textbf{Tập dữ liệu sạch sau làm sạch:} Còn lại \textbf{13.543 mẫu $\times$ 17 cột}, được đánh lại chỉ số liên tục và dùng làm đầu vào duy nhất cho mọi bước phân tích tiếp theo.
+\end{itemize}
+
+\subsection{Phát hiện Ngoại lai bằng Phương pháp IQR và Lập luận Giữ nguyên}
+Nhóm áp dụng quy tắc phân vị tứ phân vị (\textit{Interquartile Range -- IQR}) trên toàn bộ 13.543 mẫu sạch để đánh giá mức độ xuất hiện điểm vượt biên ở từng đặc trưng. Với phân vị thứ nhất $Q_1$, phân vị thứ ba $Q_3$ và $\text{IQR} = Q_3 - Q_1$, một quan sát bị gắn cờ ngoại lai nếu nằm ngoài đoạn $[Q_1 - 1.5 \times \text{IQR},\; Q_3 + 1.5 \times \text{IQR}]$. Kết quả thống kê chi tiết cho cả 16 đặc trưng được tổng hợp trong Bảng~\ref{tab:ngoai_lai_iqr}.
+
+\begin{table}[H]
+\centering
+\caption{Thống kê số lượng và tỷ lệ điểm ngoại lai theo ngưỡng $1.5 \times \text{IQR}$ trên 13.543 mẫu sạch}
+\label{tab:ngoai_lai_iqr}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Đặc trưng} & \textbf{Số ngoại lai} & \textbf{Tỷ lệ (\%)} & \textbf{Biên dưới ($Q_1 - 1.5\text{IQR}$)} & \textbf{Biên trên ($Q_3 + 1.5\text{IQR}$)} \\
+\midrule
+\texttt{Area} & 551 & 4,07\% & $-1.366,7500$ & $99.031,2500$ \\
+\texttt{Perimeter} & 500 & 3,69\% & $292,3552$ & $1.388,0213$ \\
+\texttt{MajorAxisLength} & 379 & 2,80\% & $68,2483$ & $561,1510$ \\
+\texttt{MinorAxisLength} & 567 & 4,19\% & $113,8478$ & $279,2840$ \\
+\texttt{AspectRation} & 485 & 3,58\% & $1,0208$ & $2,1138$ \\
+\texttt{Eccentricity} & 833 & 6,15\% & $0,5734$ & $0,9515$ \\
+\texttt{ConvexArea} & 549 & 4,05\% & $-1.857,5000$ & $100.890,5000$ \\
+\texttt{EquivDiameter} & 526 & 3,88\% & $117,9927$ & $376,5010$ \\
+\texttt{Extent} & 271 & 2,00\% & $0,6166$ & $0,8890$ \\
+\texttt{Solidity} & 774 & 5,72\% & $0,9792$ & $0,9965$ \\
+\texttt{roundness} & 98 & 0,72\% & $0,7080$ & $1,0425$ \\
+\texttt{Compactness} & 124 & 0,92\% & $0,6564$ & $0,9413$ \\
+\texttt{ShapeFactor1} & 533 & 3,94\% & $0,0038$ & $0,0093$ \\
+\texttt{ShapeFactor2} & 0 & 0,00\% & $-0,0004$ & $0,0037$ \\
+\texttt{ShapeFactor3} & 202 & 1,49\% & $0,4118$ & $0,8671$ \\
+\texttt{ShapeFactor4} & 760 & 5,61\% & $0,9875$ & $1,0041$ \\
+\midrule
+\textbf{Tổng mẫu có $\ge 1$ ngoại lai} & \textbf{3.004} & \textbf{22,18\%} & \multicolumn{2}{l}{\textbf{Quyết định: Giữ nguyên 100\% mẫu ngoại lai}} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Tổng hợp trên toàn tập dữ liệu, có \textbf{3.004 / 13.543 mẫu (22,18\%)} mang ít nhất một giá trị vượt ngưỡng IQR. Tỷ lệ vượt biên cao nhất rơi vào \texttt{Eccentricity} (833 mẫu; 6,15\%), \texttt{Solidity} (774 mẫu; 5,72\%) và \texttt{ShapeFactor4} (760 mẫu; 5,61\%); duy nhất \texttt{ShapeFactor2} không có ngoại lai nào (0,00\%).
+
+\textbf{Lập luận học thuật cho quyết định giữ nguyên 100\% ngoại lai:}
+\begin{enumerate}[leftmargin=*]
+    \item \textit{Bản chất biến thiên sinh học tự nhiên:} Dry Bean Dataset là tập dữ liệu đa lớp gồm 7 giống đậu khác biệt lớn về kích thước di truyền. Khi áp dụng ngưỡng IQR toàn cục gộp chung cả 7 lớp, giống hạt khổng lồ \texttt{BOMBAY} (trung vị \texttt{Area} = 171.494,5 pixel$^2$, gấp 5,38 lần giống hạt nhỏ \texttt{DERMASON} với trung vị 31.890,0 pixel$^2$) có gần như toàn bộ mẫu vượt biên trên của \texttt{Area} (99.031,25) và \texttt{ConvexArea} (100.890,50). Đây là đặc trưng phân biệt cốt lõi của giống hạt chứ không phải lỗi đo lường hay nhiễu nhập liệu.
+    \item \textit{Rủi ro xóa mất lớp thiểu số:} Giống \texttt{BOMBAY} chỉ có 522 mẫu (3,85\% tập sạch), gần tương đương đúng con số 551 ngoại lai ở cột \texttt{Area}. Nếu tự động loại bỏ các điểm vượt biên IQR toàn cục, bài toán sẽ mất gần như hoàn toàn lớp \texttt{BOMBAY} và đánh mất 22,18\% thông tin hữu ích của dữ liệu thực tế.
+    \item \textit{Phù hợp với mô hình hóa phía sau:} Cây quyết định (\texttt{DecisionTreeClassifier}) miễn nhiễm rất tốt với các giá trị biên nhờ cơ chế chia ngưỡng theo thứ tự, trong khi ở nhánh phân cụm không giám sát, các đặc trưng sẽ được đưa về cùng thang đo bằng \texttt{StandardScaler} trước khi tính khoảng cách Euclidean.
+\end{enumerate}
+
+% ==============================================================================
+% PHẦN 3: PHÂN TÍCH KHÁM PHÁ DỮ LIỆU (EDA)
+% ==============================================================================
+\section{Phân tích Khám phá Dữ liệu (EDA)}
+
+\subsection{Thống kê Mô tả và Phân bố 7 Lớp Đậu}
+Bảng~\ref{tab:thong_ke_mo_ta} trình bày các đại lượng thống kê mô tả chính (trung bình \texttt{Mean}, độ lệch chuẩn \texttt{Std}, trung vị \texttt{Median}, phân vị $Q_1$ và $Q_3$) của toàn bộ 16 đặc trưng số trên 13.543 mẫu sạch. Có thể nhận thấy sự chênh lệch thang đo cực lớn giữa các đặc trưng: \texttt{Area} có trung bình lên tới $53.048,4604 \pm 29.392,4383$ và \texttt{ConvexArea} đạt $53.767,9867 \pm 29.844,2485$, trong khi \texttt{ShapeFactor1} chỉ quanh mức $0,0066$ và \texttt{ShapeFactor2} ở mức $0,0017$ (chênh lệch hơn $10^7$ lần). Ở toàn bộ các biến kích thước, \texttt{Mean} đều lớn hơn đáng kể so với \texttt{Median} (ví dụ \texttt{Area}: 53.048,46 so với 44.580,00), phản ánh độ lệch phải rõ rệt do sự hiện diện của giống hạt lớn \texttt{BOMBAY}.
+
+\begin{table}[H]
+\centering
+\caption{Bảng thống kê mô tả rút gọn của 16 đặc trưng số ($N = 13.543$ mẫu sạch)}
+\label{tab:thong_ke_mo_ta}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+\textbf{Đặc trưng} & \textbf{Mean} & \textbf{Std} & \textbf{Median} & \textbf{Q1 (25\%)} & \textbf{Q3 (75\%)} \\
+\midrule
+\texttt{Area} & 53.048,4604 & 29.392,4383 & 44.580,0000 & 36.282,5000 & 61.382,0000 \\
+\texttt{Perimeter} & 854,9934 & 214,7227 & 793,8960 & 703,2300 & 977,1465 \\
+\texttt{MajorAxisLength} & 319,8956 & 85,8093 & 296,4046 & 253,0868 & 376,3125 \\
+\texttt{MinorAxisLength} & 202,3653 & 45,0516 & 192,4911 & 175,8864 & 217,2454 \\
+\texttt{AspectRation} & 1,5811 & 0,2452 & 1,5499 & 1,4307 & 1,7039 \\
+\texttt{Eccentricity} & 0,7503 & 0,0919 & 0,7640 & 0,7151 & 0,8097 \\
+\texttt{ConvexArea} & 53.767,9867 & 29.844,2485 & 45.122,0000 & 36.673,0000 & 62.360,0000 \\
+\texttt{EquivDiameter} & 253,0341 & 59,3077 & 238,2457 & 214,9333 & 279,5604 \\
+\midrule
+\texttt{Extent} & 0,7498 & 0,0489 & 0,7599 & 0,7187 & 0,7868 \\
+\texttt{Solidity} & 0,9872 & 0,0047 & 0,9883 & 0,9857 & 0,9900 \\
+\texttt{roundness} & 0,8737 & 0,0594 & 0,8835 & 0,8334 & 0,9170 \\
+\texttt{Compactness} & 0,8004 & 0,0615 & 0,8015 & 0,7632 & 0,8345 \\
+\texttt{ShapeFactor1} & 0,0066 & 0,0011 & 0,0066 & 0,0059 & 0,0073 \\
+\texttt{ShapeFactor2} & 0,0017 & 0,0006 & 0,0017 & 0,0012 & 0,0022 \\
+\texttt{ShapeFactor3} & 0,6443 & 0,0987 & 0,6424 & 0,5825 & 0,6963 \\
+\texttt{ShapeFactor4} & 0,9951 & 0,0043 & 0,9964 & 0,9937 & 0,9979 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Về phân bố nhãn mục tiêu, Hình~\ref{fig:phan_bo_lop} và Bảng~\ref{tab:phan_bo_lop} cho thấy tập dữ liệu có mức độ mất cân bằng lớp tự nhiên đáng kể. Lớp chiếm tỷ trọng lớn nhất là \texttt{DERMASON} với 3.546 mẫu (26,18\% tập sạch), gấp \textbf{6,79 lần} lớp thiểu số \texttt{BOMBAY} với chỉ 522 mẫu (3,85\%). Các lớp trung gian lần lượt gồm \texttt{SIRA} (2.636 mẫu; 19,46\%), \texttt{SEKER} (2.027 mẫu; 14,97\%), \texttt{HOROZ} (1.860 mẫu sau khi loại 68 bản ghi trùng; 13,73\%), \texttt{CALI} (1.630 mẫu; 12,04\%) và \texttt{BARBUNYA} (1.322 mẫu; 9,76\%). Sự chênh lệch này là cơ sở quan trọng buộc quy trình mô hình hóa phải áp dụng phân tầng (\texttt{stratify=y}) khi chia dữ liệu và sử dụng chỉ số \textbf{F1-macro} làm tiêu chí chọn mô hình chính nhằm đánh giá bình đẳng cho cả 7 lớp.
+
+\begin{table}[H]
+\centering
+\caption{Phân bố số lượng và tỷ lệ 7 giống đậu trước và sau khi loại bỏ 68 dòng trùng lặp}
+\label{tab:phan_bo_lop}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Giống đậu (\texttt{Class})} & \textbf{Gốc (N = 13.611)} & \textbf{Tỷ lệ gốc (\%)} & \textbf{Sau làm sạch (N = 13.543)} & \textbf{Tỷ lệ sạch (\%)} \\
+\midrule
+\texttt{DERMASON} & 3.546 & 26,05\% & 3.546 & 26,18\% \\
+\texttt{SIRA} & 2.636 & 19,37\% & 2.636 & 19,46\% \\
+\texttt{SEKER} & 2.027 & 14,89\% & 2.027 & 14,97\% \\
+\texttt{HOROZ} & 1.928 & 14,17\% & 1.860 & 13,73\% \\
+\texttt{CALI} & 1.630 & 11,98\% & 1.630 & 12,04\% \\
+\texttt{BARBUNYA} & 1.322 & 9,71\% & 1.322 & 9,76\% \\
+\texttt{BOMBAY} & 522 & 3,84\% & 522 & 3,85\% \\
+\midrule
+\textbf{Tổng cộng} & \textbf{13.611} & \textbf{100,00\%} & \textbf{13.543} & \textbf{100,00\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth]{../outputs/01_phan_bo_lop.png}
+    \caption{Biểu đồ 01 -- Phân bố số lượng mẫu của 7 giống đậu khô sau khi làm sạch ($N = 13.543$)}
+    \label{fig:phan_bo_lop}
+\end{figure}
+
+\subsection{Phân tích Phân bố Đơn biến}
+Hình~\ref{fig:histogram_kde} (lưới $4 \times 4$ Histogram kết hợp đường cong mật độ KDE) và Hình~\ref{fig:boxplot_ngoai_lai} (lưới $4 \times 4$ Boxplot) cung cấp cái nhìn toàn diện về cấu trúc phân bố xác suất và biên ngoại lai của cả 16 đặc trưng:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Lệch phải và đỉnh phụ ở nhóm Kích thước:} Các đặc trưng \texttt{Area}, \texttt{ConvexArea}, \texttt{Perimeter}, \texttt{MajorAxisLength}, \texttt{MinorAxisLength} và \texttt{EquivDiameter} đều có đuôi dài kéo về bên phải kèm một cụm đỉnh nhỏ tách biệt hẳn ở vùng giá trị cao -- đây chính là dấu vết trực quan của 522 mẫu giống \texttt{BOMBAY}.
+    \item \textbf{Phân bố đa đỉnh ở nhóm Hình dạng:} Các chỉ số như \texttt{ShapeFactor2}, \texttt{Compactness}, \texttt{ShapeFactor3} và \texttt{AspectRation} xuất hiện nhiều đỉnh cục bộ (\textit{multimodal}), cho thấy sự tồn tại của các nhóm hình thái khác biệt rõ rệt (hạt tròn, hạt bầu dục, hạt thon dài).
+    \item \textbf{Lệch trái mạnh ở các chỉ số độ lồi/độ khớp elip:} \texttt{Solidity} (trung vị 0,9883) và \texttt{ShapeFactor4} (trung vị 0,9964) tập trung dày đặc sát ngưỡng 1,0 với nhiều điểm ngoại lai ở đuôi trái (các hạt có vết lõm nhẹ ở rốn hạt hoặc biên ít nhẵn hơn).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.96\textwidth]{../outputs/02_histogram_dac_trung.png}
+    \caption{Biểu đồ 02 -- Phân bố đơn biến (Histogram kết hợp KDE) của 16 đặc trưng hình thái trên lưới $4 \times 4$}
+    \label{fig:histogram_kde}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.96\textwidth]{../outputs/03_boxplot_ngoai_lai.png}
+    \caption{Biểu đồ 03 -- Biểu đồ hộp (Boxplot) quan sát phân vị và các điểm ngoại lai vượt ngưỡng IQR của 16 đặc trưng}
+    \label{fig:boxplot_ngoai_lai}
+\end{figure}
+
+\subsection{Phân tích Tương quan Đa biến và Hiện tượng Đa cộng tuyến}
+Phân tích ma trận hệ số tương quan tuyến tính Pearson (Hình~\ref{fig:ma_tran_tuong_quan}) phát hiện \textbf{21 cặp đặc trưng} có hệ số tương quan tuyệt đối rất cao ($|r| > 0.9$), được liệt kê đầy đủ theo thứ tự giảm dần của $|r|$ trong Bảng~\ref{tab:tuong_quan_cao}.
+
+\begin{table}[H]
+\centering
+\caption{Danh sách đầy đủ 21 cặp đặc trưng có hiện tượng đa cộng tuyến rất mạnh ($|r| > 0.9$)}
+\label{tab:tuong_quan_cao}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}clrlclrl@{}}
+\toprule
+\textbf{STT} & \textbf{Cặp đặc trưng} & \textbf{Hệ số $r$} & \textbf{Chiều} & \textbf{STT} & \textbf{Cặp đặc trưng} & \textbf{Hệ số $r$} & \textbf{Chiều} \\
+\midrule
+1 & \texttt{Area} -- \texttt{ConvexArea} & $0,9999$ & Đồng biến & 12 & \texttt{Area} -- \texttt{Perimeter} & $0,9669$ & Đồng biến \\
+2 & \texttt{Compactness} -- \texttt{ShapeFactor3} & $0,9987$ & Đồng biến & 13 & \texttt{MajorAxisLength} -- \texttt{EquivDiameter} & $0,9623$ & Đồng biến \\
+3 & \texttt{Perimeter} -- \texttt{EquivDiameter} & $0,9915$ & Đồng biến & 14 & \texttt{Area} -- \texttt{MinorAxisLength} & $0,9520$ & Đồng biến \\
+4 & \texttt{AspectRation} -- \texttt{Compactness} & $-0,9876$ & Nghịch biến & 15 & \texttt{MinorAxisLength} -- \texttt{ConvexArea} & $0,9518$ & Đồng biến \\
+5 & \texttt{ConvexArea} -- \texttt{EquivDiameter} & $0,9853$ & Đồng biến & 16 & \texttt{MinorAxisLength} -- \texttt{EquivDiameter} & $0,9492$ & Đồng biến \\
+6 & \texttt{Area} -- \texttt{EquivDiameter} & $0,9850$ & Đồng biến & 17 & \texttt{MinorAxisLength} -- \texttt{ShapeFactor1} & $-0,9472$ & Nghịch biến \\
+7 & \texttt{Eccentricity} -- \texttt{ShapeFactor3} & $-0,9811$ & Nghịch biến & 18 & \texttt{MajorAxisLength} -- \texttt{ConvexArea} & $0,9334$ & Đồng biến \\
+8 & \texttt{AspectRation} -- \texttt{ShapeFactor3} & $-0,9785$ & Nghịch biến & 19 & \texttt{Area} -- \texttt{MajorAxisLength} & $0,9326$ & Đồng biến \\
+9 & \texttt{Perimeter} -- \texttt{MajorAxisLength} & $0,9776$ & Đồng biến & 20 & \texttt{AspectRation} -- \texttt{Eccentricity} & $0,9242$ & Đồng biến \\
+10 & \texttt{Eccentricity} -- \texttt{Compactness} & $-0,9703$ & Nghịch biến & 21 & \texttt{Perimeter} -- \texttt{MinorAxisLength} & $0,9143$ & Đồng biến \\
+11 & \texttt{Perimeter} -- \texttt{ConvexArea} & $0,9679$ & Đồng biến & & & & \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Nhận xét chuyên sâu về hiện tượng đa cộng tuyến:}
+\begin{itemize}[leftmargin=*]
+    \item \textit{Tập trung dày đặc trong Nhóm Kích thước:} Trong 21 cặp tương quan cực mạnh, có tới \textbf{15 cặp hoàn toàn nằm nội bộ Nhóm Kích thước} (tiêu biểu là \texttt{Area} -- \texttt{ConvexArea} với $r = 0,9999$, \texttt{Perimeter} -- \texttt{EquivDiameter} với $r = 0,9915$, \texttt{ConvexArea} -- \texttt{EquivDiameter} với $r = 0,9853$). Điều này xuất phát từ mối liên hệ hình học chặt chẽ giữa diện tích, chu vi và hai trục của hạt đậu lồi.
+    \item \textit{Ít dư thừa nội bộ hơn ở Nhóm Hình dạng:} Nội bộ 8 biến hình dạng chỉ có duy nhất \textbf{1 cặp} đạt $|r| > 0.9$ là \texttt{Compactness} -- \texttt{ShapeFactor3} ($r = 0,9987$, do $\text{ShapeFactor3} = \text{Compactness}^2$); 5 cặp còn lại là tương quan chéo giữa hai nhóm (chủ yếu nghịch biến giữa \texttt{AspectRation}/\texttt{Eccentricity} với \texttt{Compactness}/\texttt{ShapeFactor3} và giữa \texttt{MinorAxisLength} với \texttt{ShapeFactor1}).
+    \item \textit{Hệ quả dự kiến đối với mô hình học máy:} Đa cộng tuyến cực cao ở Nhóm Kích thước sẽ vi phạm nghiêm trọng giả định độc lập có điều kiện của \texttt{GaussianNB} (dẫn đến đếm lặp bằng chứng xác suất và làm giảm độ chính xác), trong khi \texttt{DecisionTreeClassifier} ít bị ảnh hưởng vì mỗi nút phân nhánh chỉ chọn một đặc trưng đơn lẻ tối ưu nhất.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{../outputs/04_ma_tran_tuong_quan.png}
+    \caption{Biểu đồ 04 -- Heatmap ma trận tương quan Pearson giữa 16 đặc trưng hình thái (21 cặp có $|r| > 0.9$)}
+    \label{fig:ma_tran_tuong_quan}
+\end{figure}
+
+Để quan sát trực tiếp khả năng phân tách từng giống đậu, Hình~\ref{fig:boxplot_theo_lop} đối chiếu phân bố của ba đặc trưng tiêu biểu (\texttt{Area}, \texttt{AspectRation} và \texttt{ShapeFactor1}) trên 7 lớp:
+\begin{itemize}[leftmargin=*]
+    \item Với \texttt{Area}: Giống \texttt{BOMBAY} (trung vị 171.494,5) tách biệt hoàn toàn khỏi 6 giống còn lại (tất cả đều có trung vị dưới 75.000), nhưng các cặp như \texttt{CALI} (74.791,5) -- \texttt{BARBUNYA} (69.582,0) hay \texttt{SIRA} (44.593,0) -- \texttt{SEKER} (39.180,0) lại chồng lấn mạnh về diện tích.
+    \item Với \texttt{AspectRation}: Tách xuất sắc giống hạt thon dài \texttt{HOROZ} (trung vị 2,0367) ở đầu trên và giống hạt tròn \texttt{SEKER} (trung vị 1,2362) ở đầu dưới; đồng thời giúp phân biệt \texttt{CALI} (1,7339) dài hơn rõ rệt so với \texttt{BARBUNYA} (1,5478).
+    \item Với \texttt{ShapeFactor1}: Tạo ra bậc thang phân tách rõ ràng từ \texttt{BOMBAY} (0,0035), nhóm hạt lớn \texttt{BARBUNYA}/\texttt{CALI} (0,0053--0,0055), nhóm hạt trung bình \texttt{SEKER}/\texttt{SIRA}/\texttt{HOROZ} (0,0064--0,0070) lên tới giống hạt nhỏ \texttt{DERMASON} (0,0077).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.98\textwidth]{../outputs/05_boxplot_theo_lop.png}
+    \caption{Biểu đồ 05 -- So sánh phân bố 3 đặc trưng tiêu biểu (\texttt{Area}, \texttt{AspectRation}, \texttt{ShapeFactor1}) theo 7 giống đậu}
+    \label{fig:boxplot_theo_lop}
+\end{figure}
+
+% ==============================================================================
+% PHẦN 4: MÔ HÌNH PHÂN LOẠI & TRẢ LỜI RQ1
+% ==============================================================================
+\section{Mô hình Phân loại \& Trả lời RQ1}
+
+\subsection{Thiết lập Thực nghiệm Phân loại và Quy tắc Dữ liệu Thô}
+Tập dữ liệu sạch gồm 13.543 mẫu được phân chia theo tỷ lệ \textbf{80\% tập huấn luyện (Train: 10.834 mẫu)} và \textbf{20\% tập kiểm tra (Test: 2.709 mẫu)} bằng hàm \texttt{train\_test\_split} với tham số \texttt{stratify=y} và \texttt{random\_state=42}. Bảng~\ref{tab:train_test_split} xác nhận tỷ lệ phần trăm của cả 7 lớp trên hai tập gần như đồng nhất tuyệt đối (sai lệch tối đa chỉ 0,03 điểm phần trăm).
+
+\begin{table}[H]
+\centering
+\caption{Đối chứng phân bố 7 giống đậu trên tập Train (80\%) và tập Test (20\%) sau chia phân tầng}
+\label{tab:train_test_split}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Lớp (\texttt{Class})} & \textbf{Train (Số lượng)} & \textbf{Train (\%)} & \textbf{Test (Số lượng)} & \textbf{Test (\%)} \\
+\midrule
+\texttt{BARBUNYA} & 1.057 & 9,76\% & 265 & 9,78\% \\
+\texttt{BOMBAY} & 418 & 3,86\% & 104 & 3,84\% \\
+\texttt{CALI} & 1.304 & 12,04\% & 326 & 12,03\% \\
+\texttt{DERMASON} & 2.837 & 26,19\% & 709 & 26,17\% \\
+\texttt{HOROZ} & 1.488 & 13,73\% & 372 & 13,73\% \\
+\texttt{SEKER} & 1.621 & 14,96\% & 406 & 14,99\% \\
+\texttt{SIRA} & 2.109 & 19,47\% & 527 & 19,45\% \\
+\midrule
+\textbf{Tổng cộng} & \textbf{10.834} & \textbf{100,00\%} & \textbf{2.709} & \textbf{100,00\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Cơ sở lý thuyết cho việc không dùng \texttt{StandardScaler} ở nhánh phân loại:}
+\begin{itemize}[leftmargin=*]
+    \item Đối với \texttt{DecisionTreeClassifier}: Cơ chế phân nhánh tìm ngưỡng $x_j \le t$ chỉ dựa vào quan hệ thứ tự của từng đặc trưng riêng lẻ, hoàn toàn bất biến trước mọi phép biến đổi tuyến tính đơn điệu tăng như chuẩn hóa Z-score.
+    \item Đối với \texttt{GaussianNB}: Thuật toán ước lượng phân bố chuẩn đơn biến $\mathcal{N}(\mu_{c,j}, \sigma_{c,j}^2)$ độc lập cho mỗi đặc trưng trong từng lớp; phép co giãn tuyến tính làm thay đổi $\mu$ và $\sigma$ theo cùng một hệ số nên tỷ số mật độ hậu nghiệm giữa các lớp hoàn toàn không đổi.
+    \item Việc giữ nguyên dữ liệu thô giúp loại bỏ thao tác tiền xử lý thừa, tránh nguy cơ rò rỉ thống kê từ tập kiểm tra và giữ nguyên khả năng diễn giải vật lý trực tiếp tại các nút phân tách của cây quyết định.
+\end{itemize}
+
+\textbf{Quy trình 5-fold Stratified Cross-Validation:} Toàn bộ 6 tổ hợp mô hình (2 thuật toán \texttt{GaussianNB} và \texttt{DecisionTreeClassifier(random\_state=42)} $\times$ 3 bộ đặc trưng) được đánh giá trên tập Train bằng \texttt{StratifiedKFold(n\_splits=5, shuffle=True, random\_state=42)} với hai chỉ số \texttt{F1-macro} và \texttt{Accuracy}. Mô hình có \texttt{F1-macro CV} trung bình cao nhất được chọn làm mô hình tối ưu trước khi kiểm chứng khách quan trên tập Test độc lập.
+
+\subsection{Kết quả 5-fold CV và Đánh giá trên Tập Kiểm tra (Test 20\%)}
+Bảng~\ref{tab:so_sanh_6_mo_hinh} tổng hợp toàn diện kết quả 5-fold Stratified CV (Mean $\pm$ Std trên 10.834 mẫu Train) và kết quả kiểm chứng trên tập Test (2.709 mẫu) cho cả 6 tổ hợp.
+
+\begin{table}[H]
+\centering
+\caption{So sánh hiệu năng 6 tổ hợp mô hình qua 5-fold Stratified CV (Train) và đánh giá trên tập Test (20\%)}
+\label{tab:so_sanh_6_mo_hinh}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+\textbf{Thuật toán} & \textbf{Bộ đặc trưng} & \textbf{F1-macro CV} & \textbf{Accuracy CV} & \textbf{Test Accuracy} & \textbf{Test F1-macro} \\
+\midrule
+\texttt{GaussianNB} & Toàn bộ (16 đặc trưng) & $0,7632 \pm 0,0085$ & $0,7620 \pm 0,0073$ & $0,7630$ & $0,7669$ \\
+\texttt{GaussianNB} & Kích thước (8 đặc trưng) & $0,7625 \pm 0,0080$ & $0,7612 \pm 0,0068$ & $0,7619$ & $0,7659$ \\
+\texttt{GaussianNB} & Hình dạng (8 đặc trưng) & $0,9062 \pm 0,0067$ & $0,8916 \pm 0,0082$ & $0,8915$ & $0,9060$ \\
+\midrule
+\texttt{Decision Tree} & Toàn bộ (16 đặc trưng) & $0,9107 \pm 0,0046$ & $0,8960 \pm 0,0058$ & $0,8955$ & $0,9098$ \\
+\texttt{Decision Tree} & Kích thước (8 đặc trưng) & $0,8878 \pm 0,0056$ & $0,8756 \pm 0,0055$ & $0,8808$ & $0,8920$ \\
+\textbf{\texttt{Decision Tree}} & \textbf{Hình dạng (8 đặc trưng)} & $\mathbf{0,9128 \pm 0,0072}$ & $\mathbf{0,8984 \pm 0,0072}$ & $\mathbf{0,8963}$ & $\mathbf{0,9099}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Mô hình tối ưu được lựa chọn theo tiêu chí \texttt{F1-macro CV} là \textbf{\texttt{Decision Tree} trên Nhóm Hình dạng (8 đặc trưng)}, đạt \texttt{F1-macro CV = 0,9128 $\pm$ 0,0072} và \texttt{Accuracy CV = 0,8984 $\pm$ 0,0072}. Khi đánh giá trên tập kiểm tra độc lập (2.709 mẫu), mô hình duy trì tính tổng quát hóa rất ổn định với \textbf{Test Accuracy = 0,8963 (89,63\%)} và \textbf{Test F1-macro = 0,9099 (90,99\%)}, chỉ chênh lệch rất nhỏ ($-0,0021$ đến $-0,0029$) so với điểm CV trên tập Train. Báo cáo phân loại chi tiết cho từng giống đậu của mô hình tốt nhất được trình bày tại Bảng~\ref{tab:classification_report}.
+
+\begin{table}[H]
+\centering
+\caption{Báo cáo phân loại chi tiết (\texttt{classification\_report}) của mô hình tốt nhất (\texttt{Decision Tree -- Hình dạng}) trên tập Test ($N = 2.709$)}
+\label{tab:classification_report}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Giống đậu (\texttt{Class})} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+\midrule
+\texttt{BARBUNYA} & 0,9023 & 0,8717 & 0,8868 & 265 \\
+\texttt{BOMBAY} & \textbf{1,0000} & \textbf{1,0000} & \textbf{1,0000} & 104 \\
+\texttt{CALI} & 0,8820 & 0,9172 & 0,8992 & 326 \\
+\texttt{DERMASON} & 0,9046 & 0,8956 & 0,9001 & 709 \\
+\texttt{HOROZ} & 0,9270 & 0,9220 & 0,9245 & 372 \\
+\texttt{SEKER} & 0,9293 & 0,9384 & 0,9338 & 406 \\
+\texttt{SIRA} & 0,8239 & 0,8254 & 0,8246 & 527 \\
+\midrule
+\textbf{Accuracy} & & & \textbf{0,8963} & \textbf{2.709} \\
+\textbf{Macro Avg} & \textbf{0,9099} & \textbf{0,9101} & \textbf{0,9099} & \textbf{2.709} \\
+\textbf{Weighted Avg} & \textbf{0,8964} & \textbf{0,8963} & \textbf{0,8962} & \textbf{2.709} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Phân tích Ma trận Nhầm lẫn, So sánh Mô hình và Độ quan trọng Đặc trưng}
+\textbf{Phân tích Ma trận Nhầm lẫn (Hình~\ref{fig:confusion_matrix}):}
+\begin{itemize}[leftmargin=*]
+    \item \textit{Lớp phân tách hoàn hảo:} \texttt{BOMBAY} đạt độ chính xác tuyệt đối 100\% trên cả ba chỉ số (\texttt{104/104} mẫu dự đoán đúng, không có bất kỳ lỗi dương tính giả hay âm tính giả nào) nhờ các hệ số hình dạng đặc trưng tách biệt hẳn. Tiếp theo là \texttt{SEKER} (F1 = 0,9338; Recall = 0,9384) và \texttt{HOROZ} (F1 = 0,9245; Recall = 0,9220).
+    \item \textit{Các cặp lớp dễ nhầm lẫn nhất:} Vùng lỗi tập trung áp đảo ở cặp \textbf{\texttt{DERMASON} $\leftrightarrow$ \texttt{SIRA}} với tổng cộng \textbf{116 mẫu nhầm lẫn hai chiều} (chiếm tới 41,28\% trong tổng số 281 mẫu dự đoán sai trên tập Test), cụ thể 65 mẫu \texttt{DERMASON} bị phân nhầm sang \texttt{SIRA} và 51 mẫu \texttt{SIRA} bị phân nhầm sang \texttt{DERMASON}. Do đó \texttt{SIRA} là lớp có F1-score thấp nhất (0,8246). Hai cặp nhầm lẫn kế tiếp có quy mô nhỏ hơn nhiều là \texttt{BARBUNYA} $\leftrightarrow$ \texttt{CALI} (32 mẫu: 20 + 12) và \texttt{CALI} $\leftrightarrow$ \texttt{HOROZ} (24 mẫu: 10 + 14).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.84\textwidth]{../outputs/06_confusion_matrix.png}
+    \caption{Biểu đồ 06 -- Ma trận nhầm lẫn chuẩn hóa theo hàng (kèm số đếm thực tế) của mô hình tốt nhất \texttt{Decision Tree -- Hình dạng} trên tập Test (2.709 mẫu)}
+    \label{fig:confusion_matrix}
+\end{figure}
+
+\textbf{So sánh trực quan 6 tổ hợp mô hình (Hình~\ref{fig:so_sanh_mo_hinh}):} Biểu đồ cột nhóm minh họa rõ khoảng nhảy vọt hiệu năng khi chuyển sang Nhóm Hình dạng. Đáng chú ý, \texttt{GaussianNB} khi sử dụng toàn bộ 16 đặc trưng (Test F1 = 0,7669) gần như không cải thiện gì so với chỉ dùng 8 đặc trưng Kích thước (0,7659), nhưng khi loại bỏ 8 biến kích thước đa cộng tuyến và chỉ giữ lại 8 đặc trưng Hình dạng thì Test F1 tăng vọt lên 0,9060 -- tiệm cận sát sao với hiệu năng của \texttt{Decision Tree} (0,9099).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.96\textwidth]{../outputs/07_so_sanh_mo_hinh.png}
+    \caption{Biểu đồ 07 -- So sánh Test Accuracy và Test F1-macro giữa 6 tổ hợp thuật toán và bộ đặc trưng trên tập kiểm tra (20\%)}
+    \label{fig:so_sanh_mo_hinh}
+\end{figure}
+
+\textbf{Phân tích trọng số tầm quan trọng đặc trưng Gini (Hình~\ref{fig:feature_importances}):} Khi huấn luyện \texttt{DecisionTreeClassifier} trên toàn bộ 16 đặc trưng, tổng tỷ trọng đóng góp Gini Importance của \textbf{Nhóm Hình dạng đạt 0,5995 (59,95\%)}, gấp \textbf{1,50 lần} so với \textbf{Nhóm Kích thước (0,4005 / 40,05\%)}. Năm đặc trưng có trọng số lớn nhất lần lượt là:
+\begin{enumerate}[leftmargin=*]
+    \item \texttt{ShapeFactor1} (\textbf{0,2293} -- Nhóm Hình dạng)
+    \item \texttt{Compactness} (\textbf{0,1883} -- Nhóm Hình dạng)
+    \item \texttt{MajorAxisLength} (\textbf{0,1827} -- Nhóm Kích thước)
+    \item \texttt{Perimeter} (\textbf{0,1517} -- Nhóm Kích thước)
+    \item \texttt{roundness} (\textbf{0,0730} -- Nhóm Hình dạng)
+\end{enumerate}
+Ngược lại, hai đặc trưng kích thước cơ bản là \texttt{ConvexArea} (0,0058) và \texttt{Area} (0,0044) đứng cuối bảng xếp hạng do thông tin của chúng đã bị thay thế hiệu quả hơn bởi các hệ số tỷ lệ và độ dài trục/chu vi.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{../outputs/08_feature_importances.png}
+    \caption{Biểu đồ 08 -- Xếp hạng độ quan trọng Gini Importance của 16 đặc trưng trên mô hình \texttt{Decision Tree} (Toàn bộ đặc trưng)}
+    \label{fig:feature_importances}
+\end{figure}
+
+\subsection{Kết luận Dứt khoát cho Câu hỏi Nghiên cứu RQ1}
+Từ ba tuyến bằng chứng thực nghiệm độc lập, nhóm khẳng định dứt khoát: \textbf{Nhóm đặc trưng Hình dạng quan trọng hơn và giúp xác định giống đậu chính xác hơn rõ rệt so với Nhóm đặc trưng Kích thước}:
+\begin{enumerate}[leftmargin=*]
+    \item \textit{Vượt trội nhất quán trên cả hai thuật toán:} Khi chuyển từ Nhóm Kích thước sang Nhóm Hình dạng, \texttt{F1-macro CV} của \texttt{GaussianNB} tăng vọt \textbf{+14,37 điểm phần trăm} (từ 0,7625 lên 0,9062) và của \texttt{Decision Tree} tăng \textbf{+2,50 điểm phần trăm} (từ 0,8878 lên 0,9128). Thậm chí, chỉ với 8 đặc trưng Hình dạng, \texttt{Decision Tree} còn đạt kết quả nhỉnh hơn cả khi dùng toàn bộ 16 đặc trưng (0,9128 so với 0,9107 trên CV; 0,9099 so với 0,9098 trên Test).
+    \item \textit{Chiếm ưu thế tuyệt đối về Gini Importance:} Trong mô hình đầy đủ 16 biến, Nhóm Hình dạng đóng góp \textbf{59,95\%} tổng độ giảm bất thuần Gini (gấp 1,50 lần Nhóm Kích thước với 40,05\%), đồng thời nắm giữ hai vị trí dẫn đầu là \texttt{ShapeFactor1} (22,93\%) và \texttt{Compactness} (18,83\%).
+    \item \textit{Giải thích bản chất nông học:} Kích thước tuyệt đối (\texttt{Area}, \texttt{Perimeter}) nhạy cảm với điều kiện canh tác (độ ẩm, dinh dưỡng đất, khí hậu) và có hiện tượng đa cộng tuyến nặng, trong khi các tỷ số hình thái không thứ nguyên phản ánh đặc tính hình học di truyền ổn định của từng giống đậu.
+\end{enumerate}
+
+% ==============================================================================
+% PHẦN 5: MÔ HÌNH PHÂN CỤM K-MEANS & TRẢ LỜI RQ2
+% ==============================================================================
+\section{Mô hình Phân cụm K-Means \& Trả lời RQ2}
+
+\subsection{Chuẩn hóa Dữ liệu và Khảo sát K-Means với \texorpdfstring{$K \in [2, 10]$}{K tu 2 den 10}}
+Trong bài toán học không giám sát, cột nhãn \texttt{Class} được tách bỏ hoàn toàn khỏi không gian đầu vào và chỉ lưu lại để đối chiếu hậu kiểm. Do thuật toán \texttt{KMeans} tối ưu hóa tổng bình phương khoảng cách Euclidean từ các điểm đến tâm cụm (Inertia/WCSS), sự chênh lệch đơn vị hàng chục triệu lần giữa \texttt{Area} ($\approx 53.048$) và \texttt{ShapeFactor2} ($\approx 0,0017$) sẽ làm biến \texttt{Area} và \texttt{ConvexArea} lấn át hoàn toàn 14 đặc trưng còn lại nếu không chuẩn hóa. Vì vậy, nhóm áp dụng \texttt{StandardScaler} trên toàn bộ $13.543 \times 16$ đặc trưng số để đưa mọi biến về trung bình $\mu = 0$ và độ lệch chuẩn $\sigma = 1$.
+
+Nhóm tiến hành chạy \texttt{KMeans(n\_clusters=k, random\_state=42, n\_init=10)} lần lượt cho $K \in \{2, 3, \dots, 10\}$. Bảng~\ref{tab:kmeans_k2_10} và Hình~\ref{fig:elbow_silhouette} trình bày diễn biến của hai chỉ số đánh giá nội tại là \textbf{Inertia (WCSS)} và \textbf{Silhouette Score}.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả chỉ số Inertia (WCSS) và Silhouette Score của thuật toán K-Means theo $K \in [2, 10]$}
+\label{tab:kmeans_k2_10}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}rrrl@{}}
+\toprule
+\textbf{Số cụm ($K$)} & \textbf{Inertia (WCSS)} & \textbf{Silhouette Score} & \textbf{Nhận định cấu trúc cụm} \\
+\midrule
+2 & 129.194,0199 & 0,3972 & Tách sơ bộ thành 2 nhóm kích thước lớn và nhỏ. \\
+\textbf{3} & \textbf{94.331,7346} & \textbf{0,4044} & \textbf{Tối ưu tự nhiên (Silhouette cực đại toàn cục, điểm gãy Elbow rõ nét).} \\
+4 & 75.993,1949 & 0,3423 & Bắt đầu tách thêm nhánh hạt thuôn dài, Silhouette giảm mạnh. \\
+5 & 61.624,6374 & 0,3572 & Độ dốc giảm Inertia bắt đầu thoải dần. \\
+6 & 54.900,7483 & 0,3599 & Tạo thêm cụm trung gian, có vùng giao thoa nhẹ. \\
+\textbf{7} & \textbf{48.671,4570} & \textbf{0,3088} & \textbf{Mốc đối chiếu tương ứng 7 giống đậu thực tế ($\text{ARI} = 0,6669$).} \\
+8 & 45.083,3590 & 0,3027 & Bắt đầu xuất hiện hiện tượng phân mảnh cụm. \\
+9 & 41.904,8161 & 0,3029 & Silhouette chững lại ở ngưỡng thấp. \\
+10 & 39.707,1259 & 0,2681 & Phân mảnh mạnh, chất lượng tách cụm suy giảm sâu. \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.96\textwidth]{../outputs/09_elbow_silhouette.png}
+    \caption{Biểu đồ 09 -- Đường cong Elbow (Inertia/WCSS) và Hệ số Silhouette của K-Means với $K \in [2, 10]$}
+    \label{fig:elbow_silhouette}
+\end{figure}
+
+\textbf{Lý do lựa chọn $K$ tối ưu:} Kết hợp đồng thời cả hai tiêu chí tại Hình~\ref{fig:elbow_silhouette}, số cụm tối ưu tự nhiên là \textbf{$K = 3$}:
+\begin{itemize}[leftmargin=*]
+    \item \textit{Theo Silhouette Score:} Đạt cực đại toàn cục tại $K = 3$ với \textbf{0,4044}, vượt trội so với mọi giá trị $K$ khác (giảm xuống 0,3423 tại $K = 4$ và chỉ còn 0,3088 tại $K = 7$).
+    \item \textit{Theo phương pháp Elbow:} Inertia giảm mạnh nhất từ $K = 2$ xuống $K = 3$ (giảm 34.862,29 đơn vị, tương ứng $-26,98\%$), tạo nên khuỷu gãy rõ rệt trong vùng $K = 3..5$ trước khi đường cong phẳng dần.
+    \item \textit{Ý nghĩa hình thái học:} Trong không gian 16 chiều không nhãn, 7 giống đậu tự nhiên hội tụ thành \textbf{3 đại nhóm hình thái vĩ mô}: (1) Hạt khổng lồ (\texttt{BOMBAY}), (2) Hạt lớn và thuôn dài (\texttt{CALI}, \texttt{BARBUNYA}, \texttt{HOROZ}), và (3) Hạt vừa và nhỏ (\texttt{DERMASON}, \texttt{SIRA}, \texttt{SEKER}).
+\end{itemize}
+
+\subsection{Đối chiếu Mốc \texorpdfstring{$K = 7$}{K = 7} qua PCA 2D, Crosstab và Chỉ số ARI}
+Để kiểm chứng mức độ tương khớp giữa cấu trúc gom cụm không giám sát và 7 giống đậu thực tế, nhóm tính chỉ số \textit{Adjusted Rand Index} (ARI) và lập ma trận chéo đối chiếu tại $K = 7$. Kết quả ghi nhận:
+\begin{itemize}[leftmargin=*]
+    \item Tại $K = 3$ (tối ưu Silhouette): $\text{ARI} = \mathbf{0,2976}$ (thấp do nhiều giống đậu bị gom chung vào 3 đại nhóm).
+    \item Tại $K = 7$ (số lớp thực tế): $\text{ARI} = \mathbf{0,6669}$, tăng hơn gấp đôi và khẳng định cấu trúc cụm không giám sát có mức độ tương thích khá cao với phân loại sinh học thực tế.
+\end{itemize}
+
+Bảng~\ref{tab:crosstab_k7} và Biểu đồ 10 (Hình~\ref{fig:crosstab_cum_lop}) trình bày đầy đủ phân bố giao cắt giữa 7 cụm K-Means và 7 nhãn thực tế, kèm độ tinh khiết (\textit{Purity}) và tỷ lệ bao phủ lớp của từng cụm.
+
+\begin{table}[H]
+\centering
+\caption{Ma trận chéo (Crosstab) và độ tinh khiết giữa 7 cụm K-Means ($K = 7$) và 7 giống đậu thực tế ($N = 13.543$, $\text{ARI} = 0,6669$)}
+\label{tab:crosstab_k7}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrrlrr@{}}
+\toprule
+\textbf{Cụm} & \textbf{BARB.} & \textbf{BOMB.} & \textbf{CALI} & \textbf{DERM.} & \textbf{HOROZ} & \textbf{SEKER} & \textbf{SIRA} & \textbf{Tổng} & \textbf{Lớp trội} & \textbf{Tinh khiết} & \textbf{Bao phủ} \\
+\midrule
+Cụm 0 & 0 & 0 & 0 & \textbf{2.912} & 2 & 52 & 192 & 3.158 & \texttt{DERMASON} & 92,21\% & 82,12\% \\
+Cụm 1 & 40 & 1 & \textbf{272} & 13 & 183 & 3 & 27 & 539 & \texttt{CALI} & 50,46\% & 16,69\% \\
+Cụm 2 & 9 & 0 & 26 & 7 & \textbf{1.597} & 0 & 63 & 1.702 & \texttt{HOROZ} & 93,83\% & 85,86\% \\
+Cụm 3 & 0 & \textbf{520} & 0 & 0 & 0 & 0 & 0 & 520 & \texttt{BOMBAY} & \textbf{100,00\%} & \textbf{99,62\%} \\
+Cụm 4 & 1.141 & 1 & \textbf{1.302} & 0 & 30 & 0 & 5 & 2.479 & \texttt{CALI} & 52,52\% & 79,88\% \\
+Cụm 5 & 18 & 0 & 2 & 115 & 0 & \textbf{1.874} & 24 & 2.033 & \texttt{SEKER} & 92,18\% & 92,45\% \\
+Cụm 6 & 114 & 0 & 28 & 499 & 48 & 98 & \textbf{2.325} & 3.112 & \texttt{SIRA} & 74,71\% & 88,20\% \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.84\textwidth]{../outputs/10_crosstab_cum_lop.png}
+    \caption{Biểu đồ 10 -- Heatmap ma trận chéo (Crosstab) đối chiếu 7 cụm K-Means ($K = 7$) với 7 lớp đậu thực tế}
+    \label{fig:crosstab_cum_lop}
+\end{figure}
+
+Để trực quan hóa cấu trúc không gian 16 chiều, nhóm sử dụng phép chiếu giảm chiều \texttt{PCA(n\_components=2, random\_state=42)}. Thành phần chính thứ nhất (\texttt{PC1}) giải thích \textbf{55,55\%} phương sai và thành phần chính thứ hai (\texttt{PC2}) giải thích \textbf{26,36\%} phương sai; tổng cộng hai chiều bảo toàn tới \textbf{81,91\%} lượng thông tin của toàn bộ dữ liệu gốc. Đặt song song Biểu đồ 11 (Hình~\ref{fig:pca_cum}) và Biểu đồ 12 (Hình~\ref{fig:pca_lop_that}), các phát hiện hình học nổi bật bao gồm:
+\begin{itemize}[leftmargin=*]
+    \item \textit{Bốn cụm tách biệt có độ tinh khiết rất cao ($> 92\%$):} \textbf{Cụm 3} tách riêng hoàn hảo giống \texttt{BOMBAY} ở góc trên bên phải với độ tinh khiết tuyệt đối \textbf{100,00\%} (520/520 mẫu; bao phủ 99,62\% toàn lớp \texttt{BOMBAY}). Ba cụm khác cũng khớp rất sát gồm \textbf{Cụm 2} $\leftrightarrow$ \texttt{HOROZ} (93,83\%; 1.597/1.702 mẫu), \textbf{Cụm 0} $\leftrightarrow$ \texttt{DERMASON} (92,21\%; 2.912/3.158 mẫu) và \textbf{Cụm 5} $\leftrightarrow$ \texttt{SEKER} (92,18\%; 1.874/2.033 mẫu).
+    \item \textit{Vùng giao thoa biên hạt nhỏ (\texttt{SIRA} -- \texttt{DERMASON}):} \textbf{Cụm 6} chủ yếu đại diện cho \texttt{SIRA} (2.325/3.112 mẫu; tinh khiết 74,71\%; bao phủ 88,20\% lớp \texttt{SIRA}) nhưng lẫn 499 mẫu \texttt{DERMASON} ở đường biên tiếp giáp -- hoàn toàn đồng nhất với cặp lớp dễ nhầm lẫn nhất trong bài toán phân loại RQ1.
+    \item \textit{Hợp nhất hai giống hạt lớn bầu dục (\texttt{CALI} -- \texttt{BARBUNYA}):} Do phân bố của \texttt{CALI} và \texttt{BARBUNYA} có dạng elip chồng lấn trực tiếp trên mặt phẳng PCA (Hình~\ref{fig:pca_lop_that}), thuật toán K-Means gộp cả hai giống vào \textbf{Cụm 4} (1.302 mẫu \texttt{CALI} và 1.141 mẫu \texttt{BARBUNYA}, độ tinh khiết 52,52\%), đồng thời hình thành \textbf{Cụm 1} (539 mẫu) nằm ở rìa chuyển tiếp pha trộn giữa \texttt{CALI} (272) và \texttt{HOROZ} (183).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{../outputs/11_pca_cum.png}
+    \caption{Biểu đồ 11 -- Trực quan hóa 7 cụm K-Means kèm vị trí tâm cụm (\textbf{X}) trên không gian PCA 2D (giải thích 81,91\% phương sai)}
+    \label{fig:pca_cum}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{../outputs/12_pca_lop_that.png}
+    \caption{Biểu đồ 12 -- Phân bố 7 giống đậu thực tế trên cùng không gian PCA 2D để đối chứng với Biểu đồ 11}
+    \label{fig:pca_lop_that}
+\end{figure}
+
+\subsection{Kết luận Dứt khoát cho Câu hỏi Nghiên cứu RQ2}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Số cụm tối ưu tự nhiên của K-Means là $K = 3$} (đạt đỉnh \texttt{Silhouette Score = 0,4044}, \texttt{Inertia = 94.331,7346}, điểm gãy Elbow rõ rệt), phản ánh 3 đại nhóm hình thái tự nhiên gồm hạt khổng lồ (\texttt{BOMBAY}), hạt lớn/thuôn dài (\texttt{CALI}, \texttt{BARBUNYA}, \texttt{HOROZ}) và hạt vừa/nhỏ (\texttt{DERMASON}, \texttt{SIRA}, \texttt{SEKER}).
+    \item \textbf{Mức độ khớp với 7 giống đậu thực tế tại $K = 7$ đạt mức khá cao ($\text{ARI} = 0,6669$), nhưng chưa trùng khớp hoàn toàn:} K-Means tự động khám phá xuất sắc 4/7 giống đậu (\texttt{BOMBAY} đạt tinh khiết 100\%, \texttt{HOROZ} 93,83\%, \texttt{DERMASON} 92,21\%, \texttt{SEKER} 92,18\%) và nắm bắt phần lớn lớp \texttt{SIRA} (74,71\%), song không thể phân tách rõ hai giống hạt lớn có biên hình học chồng lấn là \texttt{CALI} và \texttt{BARBUNYA}.
+\end{enumerate}
+
+% ==============================================================================
+% PHẦN 6: KIỂM CHỨNG TÁI LẬP, THẢO LUẬN & KẾT LUẬN
+% ==============================================================================
+\section{Kiểm chứng Tái lập, Thảo luận \& Kết luận}
+
+\subsection{Kiểm chứng Tính tái lập, Chuẩn Mã nguồn và Đối chiếu Nghiệm thu}
+Trong giai đoạn nghiệm thu (Sprint 4, các task \texttt{T14}, \texttt{T15}, \texttt{T16}), nhóm đã thực hiện kiểm tra kỹ lưỡng toàn bộ hệ thống nhằm bảo đảm độ tin cậy khoa học:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Tính tái lập 100\% (\texttt{T14}):} Mọi thao tác có yếu tố ngẫu nhiên đều được neo cố định bằng hằng số \texttt{RANDOM\_STATE = 42}, bao gồm: \texttt{train\_test\_split}, \texttt{StratifiedKFold}, \texttt{DecisionTreeClassifier}, \texttt{KMeans} (\texttt{n\_init=10}) và \texttt{PCA}. Chạy độc lập kịch bản \texttt{main.py} hai lần liên tiếp và đối chiếu với sổ tay \texttt{dry\_beans.ipynb} cho thấy toàn bộ chỉ số định lượng trùng khớp tuyệt đối đến 4 chữ số thập phân.
+    \item \textbf{Tuân thủ PEP 8, \texttt{RULES.md} và chất lượng đồ họa (\texttt{T15}):} Mã nguồn trong \texttt{main.py} tuân thủ chuẩn PEP 8 (độ dài dòng $\le 88$ ký tự, cấu trúc hàm hóa rõ ràng, có docstring và chú thích tiếng Việt, cảnh báo lỗi thân thiện khi thiếu dữ liệu). Toàn bộ \textbf{12 tệp biểu đồ PNG} trong thư mục \texttt{outputs/} đạt độ phân giải chuẩn \textbf{300 DPI}, đồng bộ style \texttt{seaborn-v0\_8-whitegrid}, phông chữ \texttt{DejaVu Sans} và bảng màu \texttt{tab10} cố định theo lớp.
+    \item \textbf{Đối chiếu nghiệm thu \texttt{PRD.md} (\texttt{T16}):} Toàn bộ 6 phân đoạn xử lý và hai câu hỏi nghiên cứu RQ1, RQ2 đều được hoàn tất trọn vẹn với kết quả tóm lược tại Bảng~\ref{tab:tong_ket_du_an}.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{Bảng tóm lược các chỉ số thực nghiệm cốt lõi toàn đồ án}
+\label{tab:tong_ket_du_an}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Hạng mục nghiệm thu} & \textbf{Kết quả thực tế ghi nhận (\texttt{RANDOM\_STATE = 42})} \\
+\midrule
+Dữ liệu gốc \& sau tiền xử lý & 13.611 mẫu gốc $\rightarrow$ 0 thiếu; loại 68 trùng (\texttt{HOROZ}) $\rightarrow$ \textbf{13.543 mẫu sạch} \\
+Ngoại lai theo $1.5 \times \text{IQR}$ & 3.004 / 13.543 mẫu (22,18\%); \textbf{giữ nguyên 100\%} vì biến thiên sinh học \\
+Đa cộng tuyến (EDA) & \textbf{21 cặp} có $|r| > 0.9$ (cao nhất \texttt{Area} -- \texttt{ConvexArea}: $r = 0,9999$) \\
+Phân chia Train / Test & 80/20 có \texttt{stratify}: Train = 10.834 mẫu; Test = 2.709 mẫu \\
+Mô hình phân loại tốt nhất (CV) & \texttt{Decision Tree -- Hình dạng (8 đặc trưng)}: F1-macro CV = $\mathbf{0,9128 \pm 0,0072}$ \\
+Hiệu năng trên Test set (20\%) & Accuracy = \textbf{0,8963}; F1-macro = \textbf{0,9099} (\texttt{BOMBAY} đạt 1,0000; nhầm nhiều: \texttt{DERMASON} $\leftrightarrow$ \texttt{SIRA}) \\
+Trả lời RQ1 & \textbf{Nhóm Hình dạng} vượt trội (Gini 59,95\%; tăng +14,37\% trên \texttt{GaussianNB}, +2,50\% trên \texttt{DT}) \\
+Trả lời RQ2 & $K$ tối ưu = \textbf{3} (Silhouette = \textbf{0,4044}); tại $K = 7$: \textbf{ARI = 0,6669}, PCA 2D giải thích \textbf{81,91\%} phương sai \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Thảo luận Ưu, Nhược điểm Thuật toán và Hướng Cải tiến}
+Qua thực nghiệm trên Dry Bean Dataset, nhóm rút ra những đánh giá chuyên môn quan trọng về đặc tính của ba thuật toán đã triển khai:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{\texttt{GaussianNB} (Naive Bayes chuẩn):}
+    \begin{itemize}
+        \item \textit{Ưu điểm:} Thời gian huấn luyện và dự đoán gần như tức thời; đạt hiệu năng rất ấn tượng trên Nhóm Hình dạng (F1-macro CV = 0,9062; Test F1 = 0,9060) khi các đặc trưng ít tương quan dư thừa.
+        \item \textit{Nhược điểm:} Rất nhạy cảm trước hiện tượng đa cộng tuyến. Khi đưa vào Nhóm Kích thước (15 cặp tương quan nội bộ $|r| > 0.9$), giả định độc lập có điều kiện bị vi phạm nặng nề khiến xác suất hậu nghiệm bị đếm lặp thông tin, kéo F1-macro CV sụt giảm xuống chỉ còn 0,7625.
+    \end{itemize}
+    \item \textbf{\texttt{DecisionTreeClassifier} (Cây quyết định):}
+    \begin{itemize}
+        \item \textit{Ưu điểm:} Không cần chuẩn hóa dữ liệu, miễn nhiễm tốt với đa cộng tuyến cũng như các giá trị ngoại lai sinh học ở biên; mang lại khả năng diễn giải trực quan cao thông qua chỉ số \texttt{feature\_importances\_}.
+        \item \textit{Nhược điểm:} Khi sử dụng độ sâu không giới hạn (\texttt{max\_depth=None}), cây đơn lẻ có xu hướng học quá khớp cục bộ ở vùng biên giao thoa mật độ dày giữa \texttt{DERMASON} và \texttt{SIRA} (Test Accuracy = 0,8963).
+    \end{itemize}
+    \item \textbf{\texttt{KMeans} (Phân cụm phân hoạch):}
+    \begin{itemize}
+        \item \textit{Ưu điểm:} Khám phá hiệu quả cấu trúc phân tầng tự nhiên ($K = 3$) và bóc tách chính xác 100\% giống hạt đặc thù (\texttt{BOMBAY}) cùng 3 giống nổi bật khác mà không cần bất kỳ nhãn huấn luyện nào.
+        \item \textit{Nhược điểm:} Giả định các cụm có dạng hình cầu đẳng hướng với phương sai tương đương quanh tâm khiến thuật toán khó phân rẽ những cặp giống có phân bố hình elip kéo dài và tiếp giáp trực tiếp như \texttt{CALI} và \texttt{BARBUNYA}.
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Hướng cải tiến và mở rộng đề tài:}
+\begin{itemize}[leftmargin=*]
+    \item \textit{Cắt tỉa cây và Học kết hợp (Ensemble Learning):} Áp dụng tỉa cành chi phí phức tạp (\texttt{ccp\_alpha}), giới hạn \texttt{max\_depth}/\texttt{min\_samples\_leaf} hoặc triển khai các mô hình tập hợp như \textbf{Random Forest}, \textbf{LightGBM}, \textbf{XGBoost} nhằm giảm phương sai và nâng cao khả năng phân tách cặp \texttt{DERMASON} -- \texttt{SIRA}.
+    \item \textit{Khử đa cộng tuyến cho Naive Bayes:} Kết hợp trích xuất thành phần chính (\textbf{PCA}) trực giao hoặc lọc bỏ các đặc trưng có $|r| > 0.99$ trước khi huấn luyện \texttt{GaussianNB} để khắc phục hoàn toàn vi phạm giả định độc lập.
+    \item \textit{Thuật toán phân cụm phi cầu:} Thử nghiệm \textbf{Gaussian Mixture Models (GMM)} với ma trận hiệp phương sai đầy đủ (cho phép mô hình hóa cụm hình elip xoay tự do) hoặc phân cụm dựa trên mật độ (\textbf{HDBSCAN}) để cải thiện khả năng tách biệt \texttt{CALI} và \texttt{BARBUNYA}.
+\end{itemize}
+
+\subsection{Kết luận Chung}
+Đồ án đã hoàn thành toàn diện quy trình khai phá dữ liệu trên \textbf{Dry Bean Dataset} từ làm sạch, phân tích khám phá đến xây dựng và kiểm chứng các mô hình học có giám sát và không giám sát với tính tái lập 100\%. Các kết quả định lượng đã trả lời thuyết phục cả hai câu hỏi nghiên cứu: \textbf{Nhóm đặc trưng Hình dạng} là nhân tố quyết định vượt trội trong bài toán phân loại 7 giống đậu (mô hình tối ưu \texttt{Decision Tree -- Hình dạng} đạt Test F1-macro 0,9099 và Test Accuracy 0,8963), trong khi ở bài toán phân cụm không giám sát, \textbf{K-Means} xác định cấu trúc tối ưu tự nhiên gồm \textbf{$K = 3$ đại nhóm} (Silhouette = 0,4044) và đạt độ tương thích khá cao với 7 giống đậu thực tế tại mốc $K = 7$ ($\text{ARI} = 0,6669$). Đây là nền tảng thực nghiệm đáng tin cậy để tiếp tục phát triển các hệ thống phân loại nông sản tự động ứng dụng thị giác máy tính trong thực tiễn.
+
+% ==============================================================================
+% TÀI LIỆU THAM KHẢO
+% ==============================================================================
+\begin{thebibliography}{9}
+
+\bibitem{koklu2020}
+Koklu, M., \& Ozkan, I. A. (2020). Multiclass classification of dry beans using computer vision and machine learning techniques. \textit{Computers and Electronics in Agriculture}, 174, 105507. DOI: \texttt{10.1016/j.compag.2020.105507}.
+
+\bibitem{uci_drybean}
+UCI Machine Learning Repository. \textit{Dry Bean Dataset} (Dataset ID: 602). Truy cập tại: \url{https://archive.ics.uci.edu/dataset/602/dry+bean+dataset}.
+
+\bibitem{pedregosa2011}
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., ... \& Duchesnay, E. (2011). Scikit-learn: Machine Learning in Python. \textit{Journal of Machine Learning Research}, 12, 2825--2830.
+
+\bibitem{mckinney2010}
+McKinney, W. (2010). Data Structures for Statistical Computing in Python. \textit{Proceedings of the 9th Python in Science Conference}, 51--56.
+
+\bibitem{harris2020}
+Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., ... \& Oliphant, T. E. (2020). Array programming with NumPy. \textit{Nature}, 585(7825), 357--362.
+
+\bibitem{hunter2007}
+Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment. \textit{Computing in Science \& Engineering}, 9(3), 90--95.
+
+\bibitem{waskom2021}
+Waskom, M. L. (2021). seaborn: statistical data visualization. \textit{Journal of Open Source Software}, 6(60), 3021.
+
+\end{thebibliography}
 
 \end{document}
