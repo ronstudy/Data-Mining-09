@@ -84,7 +84,7 @@ Mục tiêu của đồ án là xây dựng một quy trình khai phá dữ li�
 \subsection{Phân công Công việc Nhóm}
 Đồ án được thực hiện bởi Nhóm 9 gồm 2 thành viên, chia thành 4 giai đoạn (Sprint 1 đến Sprint 4) với tổng cộng 16 đầu việc (\texttt{T1} đến \texttt{T16}). Tỷ lệ phân bổ khối lượng công việc và phạm vi trách nhiệm cụ thể của từng thành viên được tổng hợp tại Bảng~\ref{tab:phan_cong_nhom}.
 
-\begin{longtable}{@{}p{3.4cm} c p{10.6cm}@{}}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.5cm} c >{\raggedright\arraybackslash}p{10.5cm}@{}}
 \caption{Bảng phân công công việc chi tiết của Nhóm 9 (16 tasks qua 4 Sprint)} \label{tab:phan_cong_nhom} \\
 \toprule
 \textbf{Giai đoạn (Sprint)} & \textbf{Mã} & \textbf{Phạm vi công việc cụ thể} \\
@@ -270,6 +270,7 @@ Về phân bố nhãn mục tiêu, Hình~\ref{fig:phan_bo_lop} và Bảng~\ref{t
 \centering
 \caption{Phân bố số lượng và tỷ lệ 7 giống đậu trước và sau khi loại bỏ 68 dòng trùng lặp}
 \label{tab:phan_bo_lop}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 \textbf{Giống đậu (\texttt{Class})} & \textbf{Gốc (N = 13.611)} & \textbf{Tỷ lệ gốc (\%)} & \textbf{Sau làm sạch (N = 13.543)} & \textbf{Tỷ lệ sạch (\%)} \\
@@ -284,7 +285,8 @@ Về phân bố nhãn mục tiêu, Hình~\ref{fig:phan_bo_lop} và Bảng~\ref{t
 \midrule
 \textbf{Tổng cộng} & \textbf{13.611} & \textbf{100,00\%} & \textbf{13.543} & \textbf{100,00\%} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{figure}[H]
@@ -347,7 +349,7 @@ Phân tích ma trận hệ số tương quan tuyến tính Pearson (Hình~\ref{f
 \textbf{Nhận xét chuyên sâu về hiện tượng đa cộng tuyến:}
 \begin{itemize}[leftmargin=*]
     \item \textit{Tập trung dày đặc trong Nhóm Kích thước:} Trong 21 cặp tương quan cực mạnh, có tới \textbf{15 cặp hoàn toàn nằm nội bộ Nhóm Kích thước} (tiêu biểu là \texttt{Area} -- \texttt{ConvexArea} với $r = 0,9999$, \texttt{Perimeter} -- \texttt{EquivDiameter} với $r = 0,9915$, \texttt{ConvexArea} -- \texttt{EquivDiameter} với $r = 0,9853$). Điều này xuất phát từ mối liên hệ hình học chặt chẽ giữa diện tích, chu vi và hai trục của hạt đậu lồi.
-    \item \textit{Ít dư thừa nội bộ hơn ở Nhóm Hình dạng:} Nội bộ 8 biến hình dạng chỉ có duy nhất \textbf{1 cặp} đạt $|r| > 0.9$ là \texttt{Compactness} -- \texttt{ShapeFactor3} ($r = 0,9987$, do $\text{ShapeFactor3} = \text{Compactness}^2$); 5 cặp còn lại là tương quan chéo giữa hai nhóm (chủ yếu nghịch biến giữa \texttt{AspectRation}/\texttt{Eccentricity} với \texttt{Compactness}/\texttt{ShapeFactor3} và giữa \texttt{MinorAxisLength} với \texttt{ShapeFactor1}).
+    \item \textit{Ít dư thừa nội bộ hơn ở Nhóm Hình dạng:} Nội bộ 8 biến hình dạng chỉ có duy nhất \textbf{1 cặp} đạt $|r| > 0.9$ là \texttt{Compactness} -- \texttt{ShapeFactor3} ($r = 0,9987$, do $\text{ShapeFactor3} = \text{Compactness}^2$); 5 cặp còn lại là tương quan chéo giữa hai nhóm (chủ yếu nghịch biến giữa \texttt{AspectRation} / \texttt{Eccentricity} với \texttt{Compactness} / \texttt{ShapeFactor3} và giữa \texttt{MinorAxisLength} với \texttt{ShapeFactor1}).
     \item \textit{Hệ quả dự kiến đối với mô hình học máy:} Đa cộng tuyến cực cao ở Nhóm Kích thước sẽ vi phạm nghiêm trọng giả định độc lập có điều kiện của \texttt{GaussianNB} (dẫn đến đếm lặp bằng chứng xác suất và làm giảm độ chính xác), trong khi \texttt{DecisionTreeClassifier} ít bị ảnh hưởng vì mỗi nút phân nhánh chỉ chọn một đặc trưng đơn lẻ tối ưu nhất.
 \end{itemize}
 
@@ -408,7 +410,7 @@ Tập dữ liệu sạch gồm 13.543 mẫu được phân chia theo tỷ lệ \
     \item Việc giữ nguyên dữ liệu thô giúp loại bỏ thao tác tiền xử lý thừa, tránh nguy cơ rò rỉ thống kê từ tập kiểm tra và giữ nguyên khả năng diễn giải vật lý trực tiếp tại các nút phân tách của cây quyết định.
 \end{itemize}
 
-\textbf{Quy trình 5-fold Stratified Cross-Validation:} Toàn bộ 6 tổ hợp mô hình (2 thuật toán \texttt{GaussianNB} và \texttt{DecisionTreeClassifier(random\_state=42)} $\times$ 3 bộ đặc trưng) được đánh giá trên tập Train bằng \texttt{StratifiedKFold(n\_splits=5, shuffle=True, random\_state=42)} với hai chỉ số \texttt{F1-macro} và \texttt{Accuracy}. Mô hình có \texttt{F1-macro CV} trung bình cao nhất được chọn làm mô hình tối ưu trước khi kiểm chứng khách quan trên tập Test độc lập.
+\textbf{Quy trình 5-fold Stratified Cross-Validation:} Toàn bộ 6 tổ hợp mô hình (2 thuật toán \texttt{GaussianNB} và \texttt{DecisionTreeClassifier} với \texttt{random\_state=42} $\times$ 3 bộ đặc trưng) được đánh giá trên tập Train thông qua \texttt{StratifiedKFold} với cấu hình 5 tập con (\texttt{n\_splits=5}, \texttt{shuffle=True}, \texttt{random\_state=42}) trên hai chỉ số \texttt{F1-macro} và \texttt{Accuracy}. Mô hình có \texttt{F1-macro CV} trung bình cao nhất được chọn làm mô hình tối ưu trước khi kiểm chứng khách quan trên tập Test độc lập.
 
 \subsection{Kết quả 5-fold CV và Đánh giá trên Tập Kiểm tra (Test 20\%)}
 Bảng~\ref{tab:so_sanh_6_mo_hinh} tổng hợp toàn diện kết quả 5-fold Stratified CV (Mean $\pm$ Std trên 10.834 mẫu Train) và kết quả kiểm chứng trên tập Test (2.709 mẫu) cho cả 6 tổ hợp.
