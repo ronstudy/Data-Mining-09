@@ -1,0 +1,59 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage[utf8]{vietnam}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{parskip}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tocbibind} % Để thêm mục lục, tài liệu tham khảo vào mục lục
+\usepackage{float} % Thêm gói float để sử dụng [H]
+
+% Thiết lập lề trang
+\geometry{a4paper, left=3cm, right=2cm, top=2.5cm, bottom=2.5cm}
+
+% Tắt thụt đầu dòng
+\setlength{\parindent}{0pt}
+
+% Thiết lập khoảng cách dòng
+\linespread{1.2}
+
+\begin{document}
+
+% Trang bìa
+\begin{titlepage}
+    \centering
+
+    \huge
+    \textbf{TRƯỜNG ĐẠI HỌC SÀI GÒN} \\[0.3cm]
+    \large
+    \textbf{KHOA CÔNG NGHỆ THÔNG TIN} \\[1cm]
+    
+    \includegraphics[width=9cm]{SGU-LOGO.png} \\
+    \Large
+    \textbf{BÁO CÁO ĐỒ ÁN CUỐI KỲ} \\[0.3cm]
+    \Large
+    \textbf{Học Phần: Khai thác dữ liệu và ứng dụng (841447)} \\[0.5cm]
+    
+    \textbf{Chủ Đề: Phân loại và Phân cụm Đậu khô - Dry Bean Dataset} \\[0.7cm]
+    
+    \textbf{Sinh Viên Thực Hiện:} \\[0.3cm]
+    \begin{tabular}{ll}
+        Trương Chí Long & MSSV: 3123410198 \\
+        Bùi Anh Đức & MSSV: 3124720016 \\
+    \end{tabular} \\[0.5cm]
+    \Large
+    \text{Giảng Viên Hướng Dẫn:} \textbf{Nguyễn Thanh Phước} \\[2cm]
+    \normalsize
+    \textbf{Thành phố Hồ Chí Minh, tháng 11 năm 2026}
+    \vfill
+\end{titlepage}
+
+% Mục lục tự động
+\tableofcontents
+\clearpage
+\renewcommand{\thesection}{\arabic{section}}
+
+\end{document}
